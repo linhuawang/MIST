@@ -130,8 +130,8 @@ def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cv_fold, n=1):
 	for ep, im in zip(eps, imputed):
 		print(im)
 		print(ep)
-		sys.exit(0)
 		perf_df = utils.wholeSlidePerformance(ori_data, ho_mask, ho_data, im, ep)
+		sys.exit(0)
 		perf_dfs.append(perf_df)
 	perf_dfs = pd.concat(perf_dfs)
 	perf_dfs = perf_dfs.sort_values("PCC")

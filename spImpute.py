@@ -73,7 +73,6 @@ def spImpute_with_corMat(data, meta, cor_mat, epislon=0.6, n=1): # multiprocessi
 			ri_spots = cc_spots + sampled_spot
 			ri_impute = rankMinImpute(data.loc[ri_spots,:])
 			values[:,:,i2] = ri_impute.values[:m, :]
-			print(i1, i2)
 		imputed.loc[cc_spots,:] = np.mean(values, axis=2)
 
 	assert np.all(data.values[known_idx] > 0)
@@ -137,7 +136,7 @@ def softThreshold(s, l):
 	return np.multiply(np.sign(s), np.absolute(s - l))
 
 def run_impute(param):
-	ho_data, meta_data, ep = param
+	ho_data, meta_data, cor_mat, ep = param
 	imputed = spImpute_with_corMat(ho_data, meta_data, cor_mat, ep)
 	return imputed
 

@@ -54,8 +54,8 @@ def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented ye
 
 
 def rankMinImpute(data):
-	good_genes = data.columns[((ori_data > 3).sum() > 2)].tolist()
-	bad_genes = data.columns[((ori_data > 3).sum() <= 2)].tolist()
+	good_genes = data.columns[((data > 3).sum() > 2)].tolist()
+	bad_genes = data.columns[((data > 3).sum() <= 2)].tolist()
 	all_genes = data.columns.tolist()
 	bad_data = data.loc[:, bad_genes]
 	good_data = data.loc[:, good_genes]
@@ -97,9 +97,9 @@ def rankMinImpute(data):
 			break
 		lam = decfac*lam
 		#print("lambda: %.2f/%.2f, error: %.4f/%.4f" %(lam,lamIni * tol, e2, err))
-	imputed = pd.DataFrame(data=X, index=data.index, columns=good_data.columns)
+	imputed = pd.DataFrame(data=X, index=bad_data.index, columns=good_data.columns)
 	imputed = pd.concat([bad_data, imputed], index=1)
-	imputed = imputed.loc[:, all_genes]
+	imputed = imputed.loc[data.index, all_genes]
 	t2 = time()
 	#print("Rank minmization imputation for %d spots finished in %.1f seconds." %(data.shape[0],t2-t1))
 	return imputed

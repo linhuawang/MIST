@@ -129,7 +129,7 @@ def DFS(CNNs, nodes, node, cor_mat, epi):
 				DFS(CNNs, nodes, neighbor, cor_mat, epi)
 	return CNNs
 
-def plot_ccs(ccs, meta):
+def plot_ccs(ccs, meta, title="none"):
 	cc10, cc2, cc1 = 0, 0, 0
 	xmin, xmax = meta.iloc[:, 0].min(), meta.iloc[:, 0].max()
 	ymin, ymax = meta.iloc[:, 1].min(), meta.iloc[:, 1].max()
@@ -151,6 +151,8 @@ def plot_ccs(ccs, meta):
 	f = plt.figure(figsize=(4,4))
 	plt.scatter(x=df.x.to_numpy(), y=df.y.to_numpy(), c=df.color.tolist())
 	plt.gca().invert_yaxis()
+	if title != "none":
+		plt.title(title)
 	return f
 
 # input count matrix should be log scaled

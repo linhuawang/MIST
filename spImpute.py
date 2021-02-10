@@ -24,7 +24,7 @@ def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented ye
 	cor_mat = spot_PCA_sims(data)
 	nodes = construct_graph(meta)
 	ccs = spatialCCs(nodes, cor_mat, epislon)
-	f = plot_ccs(ccs, meta)
+	f = plot_ccs(ccs, meta, "epsilon = %.2f" %epislon)
 	spots = data.index.tolist()
 	known_idx = np.where(data.values)
 	imputed = data.copy()

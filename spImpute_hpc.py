@@ -10,7 +10,6 @@ from statsmodels.distributions.empirical_distribution import ECDF
 import math
 from scipy.stats import pearsonr
 from scipy.spatial import distance
-from progressbar import *
 import sys
 from neighbors import *
 from shutil import rmtree

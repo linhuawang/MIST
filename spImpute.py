@@ -52,6 +52,34 @@ def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented ye
 	#print("Imptuation finished in %.2f seconds." %(end_time - start_time))
 	return imputed, f
 
+def spImpute_with_corMat(data, meta, cor_mat, epislon=0.6, n=1): # multiprocessing not implemented yet
+	#start_time = time()
+	nodes = construct_graph(meta)
+	ccs = spatialCCs(nodes, cor_mat, epislon)
+	spots = data.index.tolist()
+	known_idx = np.where(data.values)
+	imputed = data.copy()
+
+	for i1 in range(len(ccs)):
+		cc = ccs[i1]
+		cc_spots = [c.name for c in cc]
+		other_spots = [s for s in spots if s not in cc_spots]
+		m = len(cc_spots)
+		s = int(len(other_spots) / 10)
+		values = np.zeros(shape=(m, data.shape[1], 10))
+		for i2 in range(10): 
+			np.random.seed(i2)
+			sampled_spot = list(np.random.choice(other_spots, s, replace=False))
+			ri_spots = cc_spots + sampled_spot
+			ri_impute = rankMinImpute(data.loc[ri_spots,:])
+			values[:,:,i2] = ri_impute.values[:m, :]
+			print(i1, i2)
+		imputed.loc[cc_spots,:] = np.mean(values, axis=2)
+
+	assert np.all(data.values[known_idx] > 0)
+	imputed.values[known_idx] = data.values[known_idx]
+	return imputed
+
 
 def rankMinImpute(data):
 	good_genes = data.columns[((data > 3).sum() > 2)].tolist()
@@ -110,14 +138,13 @@ def softThreshold(s, l):
 
 def run_impute(param):
 	ho_data, meta_data, ep = param
-	imputed, _ = spImpute(ho_data, meta_data, ep)
+	imputed = spImpute_with_corMat(ho_data, meta_data, cor_mat, ep)
 	return imputed
 
-def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cv_fold, n=1):
+def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold, n=1):
 	pre_eps = np.arange(0.2, 1.0, 0.1)
 	eps = []
 
-	cor_mat = utils.spot_PCA_sims(ori_data)
 	nodes = construct_graph(meta_data)
 	cc_lens = []
 	for ep in np.flip(pre_eps):
@@ -130,12 +157,16 @@ def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cv_fold, n=1):
 
 	params = []
 	for ep in eps:
-		params.append([ho_data, meta_data, ep])
+		params.append([ho_data, meta_data, cor_mat, ep])
+
 	p = Pool(n)
 	imputed = p.map(run_impute, params)
 	p.close()
 	perf_dfs = []
+	ori_data = np.log2(ori_data + 1)
+	ho_data = np.log2(ho_data + 1)
 	for ep, im in zip(eps, imputed):
+		im = np.log2(im + 1)
 		perf_df = utils.wholeSlidePerformance(ori_data, ho_mask, ho_data, im, ep)
 		perf_dfs.append(perf_df)
 	perf_dfs = pd.concat(perf_dfs)
@@ -170,16 +201,18 @@ def generate_cv_masks(original_data, k=2):
 
 def select_ep(original_data, meta_data, k=2, n=1):
 	start_time = time()
-	print(original_data.shape)
-	original_data = utils.filterGene_sparsity(original_data,0.8)
-	print(original_data.shape)
 	original_data =  utils.cpm_norm(original_data, log=False)
+	cor_mat = spot_PCA_sims(original_data)
+	print(original_data.shape)
+	training_data = utils.filterGene_sparsity(original_data,0.8)
+	print(training_data.shape)
+	
 	# generate k fold cross validation datasets
-	ho_dsets, ho_masks = generate_cv_masks(original_data)
+	ho_dsets, ho_masks = generate_cv_masks(training_data)
 	perf_dfs = []
 	for fd in range(2):
 		ho_data, ho_mask = ho_dsets[fd], ho_masks[fd]
-		perf_df = epislon_perf(ho_data, ho_mask, meta_data, original_data, fd, n)
+		perf_df = epislon_perf(ho_data, ho_mask, meta_data, training_data, cor_mat, fd, n)
 		perf_dfs.append(perf_df)
 	perf_dfs = pd.concat(perf_dfs)
 	print(perf_dfs)

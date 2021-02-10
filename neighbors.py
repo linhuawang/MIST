@@ -156,31 +156,38 @@ def plot_ccs(ccs, meta, title="none"):
 	return f
 
 # input count matrix should be log scaled
-def detectSDEs(ccs, count, log=False):
+def detectSDEs(fn, ep, log=False):
+	count, meta = read_ST_data(fn)
+
 	if log:
 		count_filt = np.log2(count + 1)
 	else:
 		count_filt = count.copy()
+	cor_mat = spot_PCA_sims(count_filt)
+
+	nodes = construct_graph(meta)
+	ccs = spatialCCs(nodes, cor_mat, ep, merge=0)
+	
 	genes = count_filt.columns.tolist()
 	cc_dfs = []
 	for i in range(len(ccs)):
 		cc = ccs[i]
-		cc_spots= [c.name for c in cc]
-		count_cc = count_filt.loc[cc_spots, genes]
-		other_spots = [s for s in count_filt.index.tolist() if s not in cc_spots]
-		count_other = count_filt.loc[other_spots, genes]
-		pvals, logFCs = [], []
-		for g in genes:
-			pval = ranksums(count_cc.loc[:,g].to_numpy(), count_other.loc[:, g].to_numpy())[1]
-			logFC = np.mean(count_cc.loc[:,g].to_numpy()) - np.mean(count_other.loc[:, g].to_numpy())
-
-			pvals.append(pval)
-			logFCs.append(logFC)
-		cc_df = pd.DataFrame({"gene":genes, "pval": pvals, "logFC":logFCs})
-		cc_df["padj"] = multipletests(cc_df.pval.to_numpy())[1]
-		cc_df=cc_df.loc[cc_df.padj <= 0.05,:]
-		cc_df["component"] = i
-		cc_dfs.append(cc_df)
+		if len(cc) >= 5:
+			cc_spots= [c.name for c in cc]
+			count_cc = count_filt.loc[cc_spots, genes]
+			other_spots = [s for s in count_filt.index.tolist() if s not in cc_spots]
+			count_other = count_filt.loc[other_spots, genes]
+			pvals, logFCs = [], []
+			for g in genes:
+				pval = ranksums(count_cc.loc[:,g].to_numpy(), count_other.loc[:, g].to_numpy())[1]
+				logFC = np.mean(count_cc.loc[:,g].to_numpy()) - np.mean(count_other.loc[:, g].to_numpy())
+				pvals.append(pval)
+				logFCs.append(logFC)
+			cc_df = pd.DataFrame({"gene":genes, "pval": pvals, "logFC":logFCs})
+			cc_df["padj"] = multipletests(cc_df.pval.to_numpy())[1]
+			cc_df=cc_df.loc[cc_df.padj <= 0.05,:]
+			cc_df["component"] = i
+			cc_dfs.append(cc_df)
 	cc_dfs = pd.concat(cc_dfs)
 	print(cc_dfs)
 	return cc_dfs

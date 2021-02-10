@@ -54,13 +54,19 @@ def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented ye
 
 
 def rankMinImpute(data):
+	good_genes = data.columns[((ori_data > 3).sum() > 2)].tolist()
+	bad_genes = data.columns[((ori_data > 3).sum() <= 2)].tolist()
+	all_genes = data.columns.tolist()
+	bad_data = data.loc[:, bad_genes]
+	good_data = data.loc[:, good_genes]
+
 	t1 = time()
-	D = np.ravel(data.values) # flattened count matrix
+	D = np.ravel(good_data.values) # flattened count matrix
 	idx = np.where(D) # nonzero indices of D
 	y = D[idx] # nonzero observed values 
-	n = np.prod(data.shape)
+	n = np.prod(good_data.shape)
 	err= 1E-12
-	x_initial = np.zeros(np.prod(data.shape))
+	x_initial = np.zeros(np.prod(good_data.shape))
 	tol= 1E-4
 	decfac = 0.7
 	alpha = 1.1
@@ -76,7 +82,7 @@ def rankMinImpute(data):
 			z = np.zeros(n) 
 			z[idx] = y - x[idx]
 			b = x + (1/alpha) * z
-			B = np.reshape(b, data.shape)
+			B = np.reshape(b, good_data.shape)
 			U, S, V = np.linalg.svd(B,full_matrices=False)
 			s = softThreshold(S, lam/(2*alpha))
 			X = U @ np.diag(s) @ V
@@ -91,7 +97,9 @@ def rankMinImpute(data):
 			break
 		lam = decfac*lam
 		#print("lambda: %.2f/%.2f, error: %.4f/%.4f" %(lam,lamIni * tol, e2, err))
-	imputed = pd.DataFrame(data=X, index=data.index, columns=data.columns)
+	imputed = pd.DataFrame(data=X, index=data.index, columns=good_data.columns)
+	imputed = pd.concat([bad_data, imputed], index=1)
+	imputed = imputed.loc[:, all_genes]
 	t2 = time()
 	#print("Rank minmization imputation for %d spots finished in %.1f seconds." %(data.shape[0],t2-t1))
 	return imputed

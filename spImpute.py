@@ -98,7 +98,8 @@ def rankMinImpute(data):
 		lam = decfac*lam
 		#print("lambda: %.2f/%.2f, error: %.4f/%.4f" %(lam,lamIni * tol, e2, err))
 	imputed = pd.DataFrame(data=X, index=bad_data.index, columns=good_data.columns)
-	imputed = pd.concat([bad_data, imputed], index=1)
+	imputed = pd.concat([bad_data, imputed], axis=1)
+	assert not imputed.isna().any()
 	imputed = imputed.loc[data.index, all_genes]
 	t2 = time()
 	#print("Rank minmization imputation for %d spots finished in %.1f seconds." %(data.shape[0],t2-t1))

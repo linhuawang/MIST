@@ -14,7 +14,6 @@ import sys
 from neighbors import *
 from shutil import rmtree
 from scipy.sparse import csgraph
-import cvxpy as cp
 # from tqdm import tqdm, trange
 import utils
 

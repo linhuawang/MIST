@@ -36,7 +36,7 @@ def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented ye
 		m = len(cc_spots)
 		s = int(len(other_spots) / 10)
 		values = np.zeros(shape=(m, data.shape[1], 10))
-		for i2 in range(10):
+		for i2 in range(1): #change back to 10
 			np.random.seed(i2)
 			sampled_spot = list(np.random.choice(other_spots, s, replace=False))
 			ri_spots = cc_spots + sampled_spot
@@ -106,6 +106,7 @@ def run_impute(param):
 
 def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cv_fold, n=1):
 	pre_eps = np.arange(0.2, 1.0, 0.1)
+	pre_eps=[0.4] # TO BE DELETED, TEST ONLY
 	eps = []
 
 	cor_mat = utils.spot_PCA_sims(ori_data)
@@ -127,6 +128,9 @@ def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cv_fold, n=1):
 	p.close()
 	perf_dfs = []
 	for ep, im in zip(eps, imputed):
+		print(im)
+		print(ep)
+		sys.exit(0)
 		perf_df = utils.wholeSlidePerformance(ori_data, ho_mask, ho_data, im, ep)
 		perf_dfs.append(perf_df)
 	perf_dfs = pd.concat(perf_dfs)

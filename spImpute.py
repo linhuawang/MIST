@@ -19,11 +19,12 @@ import cvxpy as cp
 from tqdm import tqdm, trange
 import utils
 
-def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented
+def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented yet
 	#start_time = time()
 	cor_mat = spot_PCA_sims(data)
 	nodes = construct_graph(meta)
 	ccs = spatialCCs(nodes, cor_mat, epislon)
+	f = plot_ccs(ccs, meta)
 	spots = data.index.tolist()
 	known_idx = np.where(data.values)
 	imputed = data.copy()
@@ -35,20 +36,22 @@ def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented
 		m = len(cc_spots)
 		s = int(len(other_spots) / 10)
 		values = np.zeros(shape=(m, data.shape[1], 10))
-
 		for i2 in range(10):
 			np.random.seed(i2)
 			sampled_spot = list(np.random.choice(other_spots, s, replace=False))
 			ri_spots = cc_spots + sampled_spot
 			ri_impute = rankMinImpute(data.loc[ri_spots,:])
 			values[:,:,i2] = ri_impute.values[:m, :]
-
+			print(i1, i2)
 		imputed.loc[cc_spots,:] = np.mean(values, axis=2)
+
 	assert np.all(data.values[known_idx] > 0)
 	imputed.values[known_idx] = data.values[known_idx]
+
 	#end_time = time()
 	#print("Imptuation finished in %.2f seconds." %(end_time - start_time))
-	return imputed
+	return imputed, f
+
 
 def rankMinImpute(data):
 	t1 = time()
@@ -96,7 +99,7 @@ def rankMinImpute(data):
 def softThreshold(s, l):
 	return np.multiply(np.sign(s), np.absolute(s - l))
 
-def evaluate_ep(param):
+def run_impute(param):
 	ho_data, meta_data, ep = param
 	imputed = spImpute(ho_data, meta_data, ep)
 	return imputed
@@ -120,7 +123,7 @@ def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cv_fold, n=1):
 	for ep in eps:
 		params.append([ho_data, meta_data, ep])
 	p = Pool(n)
-	imputed = p.map(evaluate_ep, params)
+	imputed = p.map(run_impute, params)
 	p.close()
 	perf_dfs = []
 	for ep, im in zip(eps, imputed):
@@ -191,7 +194,7 @@ if __name__ == "__main__":
                     help='File path to save the imputed values.')
 	parser.add_argument('-m', '--member_fn', type=str, default='none',
                     help='File path to save the other files.')
-	parser.add_argument('-s', '--select', type=bool, default=True,
+	parser.add_argument('-s', '--select', type=int, default=1,
 					help = 'whether infer epislon using holdout test or not.')
 	parser.add_argument('-n', '--ncore', type=int, default=1,
 					help = 'number of processors')
@@ -204,16 +207,19 @@ if __name__ == "__main__":
 	select = args.select
 	count_matrix, meta_data = read_ST_data(count_fn)
 	count_matrix = count_matrix.fillna(0)
-	if select: # takes hours even with multiprocessing
+	if select == 1: # takes hours even with multiprocessing
 		ep = select_ep(count_matrix, meta_data, k=2, n=ncore)
 	else:
 		ep = epi
-	imputed = spImpute(count_matrix, meta_data, ep, ncore)
+	count_matrix = utils.cpm_norm(count_matrix)
+	imputed, figure = spImpute(count_matrix, meta_data, ep, ncore)
 
 	# member_fn = args.member_fn
 	# imputed = CCRM(count_matrix, meta_data, epi)
 	if out_fn != "none":
 		imputed.to_csv(out_fn)
+		fig_out = out_fn.split(".csv")[0] + ".png"
+		figure.savefig(fig_out)
 	# # if member_fn != "none":
 	# # 	memberships.to_csv(member_fn)
 

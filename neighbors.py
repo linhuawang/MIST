@@ -7,6 +7,8 @@ from utils import *
 import seaborn as sns
 from shutil import rmtree
 import os
+from scipy.stats import ranksums
+from statsmodels.stats.multitest import multipletests
 
 class Node:
 	def __init__(self,x ,y, name):
@@ -67,10 +69,7 @@ def construct_graph(meta_data):
 			if dist < 2:
 				node1.add_neighbor(node2)
 				node2.add_neighbor(node1)
-			# if (( node1.x - node2.x == 0) and (node1.y - node2.y in [-1,1])) or\
-			#     ((node1.x - node2.x in [1, -1]) and (node1.y - node2.y == 0)):
-			#     node1.add_neighbor(node2)
-			#     node2.add_neighbor(node1)
+
 	return nodes
 
 def removeNodes(nodes, cnns):
@@ -152,10 +151,38 @@ def plot_ccs(ccs, meta):
 	f = plt.figure(figsize=(4,4))
 	plt.scatter(x=df.x.to_numpy(), y=df.y.to_numpy(), c=df.color.tolist())
 	plt.gca().invert_yaxis()
-			#sns.scatterplot(data=df, x='x', y='y', c='color')
-#	plt.xlim(xmin-1, xmax+1)
-#	plt.ylim(ymin-1, ymax+1)
-	plt.show()
+	return f
+
+# input count matrix should be log scaled
+def detectSDEs(ccs, count, log=False):
+	if log:
+		count_filt = np.log2(count + 1)
+	else:
+		count_filt = count.copy()
+	genes = count_filt.columns.tolist()
+	cc_dfs = []
+	for i in range(len(ccs)):
+		cc = ccs[i]
+		cc_spots= [c.name for c in cc]
+		count_cc = count_filt.loc[cc_spots, genes]
+		other_spots = [s for s in count_filt.index.tolist() if s not in cc_spots]
+		count_other = count_filt.loc[other_spots, genes]
+		pvals, logFCs = [], []
+		for g in genes:
+			pval = ranksums(count_cc.loc[:,g].to_numpy(), count_other.loc[:, g].to_numpy())[1]
+			logFC = np.mean(count_cc.loc[:,g].to_numpy()) - np.mean(count_other.loc[:, g].to_numpy())
+
+			pvals.append(pval)
+			logFCs.append(logFC)
+		cc_df = pd.DataFrame({"gene":genes, "pval": pvals, "logFC":logFCs})
+		cc_df["padj"] = multipletests(cc_df.pval.to_numpy())[1]
+		cc_df=cc_df.loc[cc_df.padj <= 0.05,:]
+		cc_df["component"] = i
+		cc_dfs.append(cc_df)
+	cc_dfs = pd.concat(cc_dfs)
+	print(cc_dfs)
+	return cc_dfs
+
 
 
 

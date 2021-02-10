@@ -15,7 +15,7 @@ from neighbors import *
 from shutil import rmtree
 from scipy.sparse import csgraph
 import cvxpy as cp
-from tqdm import tqdm, trange
+# from tqdm import tqdm, trange
 import utils
 
 def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented yet

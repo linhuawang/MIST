@@ -46,8 +46,8 @@ def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented ye
 		values = np.zeros(shape=(m, data.shape[1], 10))
 
 		for i2 in range(10):
-			values[:,:, i2] = imputed_values[i2].values
-			
+			values[:,:, i2] = imputed_values[i2].values[:m,:]
+
 		imputed.loc[cc_spots,:] = np.mean(values, axis=2)
 
 	imputed.values[known_idx] = data.values[known_idx]

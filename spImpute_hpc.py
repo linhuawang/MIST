@@ -25,6 +25,12 @@ def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented ye
 	f = plot_ccs(ccs, meta, "epsilon = %.2f" %epislon)
 	spots = data.index.tolist()
 	known_idx = np.where(data.values)
+
+	if len(ccs) == 1:
+		imputed =  rankMinImpute(data)
+		imputed.values[known_idx] = data.values[known_idx]
+		return imputed
+
 	imputed = data.copy()
 
 	for i1 in range(len(ccs)):
@@ -35,7 +41,7 @@ def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented ye
 		s = int(len(other_spots) / 10)
 		# values = np.zeros(shape=(m, data.shape[1], 10))
 		params = []
-		for i2 in range(10): 
+		for i2 in range(10):
 			np.random.seed(i2)
 			sampled_spot = list(np.random.choice(other_spots, s, replace=False))
 			ri_spots = cc_spots + sampled_spot
@@ -44,10 +50,8 @@ def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented ye
 		imputed_values = p.map(rankMinImpute, params)
 		p.close()
 		values = np.zeros(shape=(m, data.shape[1], 10))
-
 		for i2 in range(10):
 			values[:,:, i2] = imputed_values[i2].values[:m,:]
-
 		imputed.loc[cc_spots,:] = np.mean(values, axis=2)
 
 	imputed.values[known_idx] = data.values[known_idx]
@@ -61,6 +65,12 @@ def spImpute_with_corMat(data, meta, cor_mat, epislon=0.6, n=1): # multiprocessi
 	ccs = spatialCCs(nodes, cor_mat, epislon)
 	spots = data.index.tolist()
 	known_idx = np.where(data.values)
+
+	if len(ccs) == 1:
+		imputed =  rankMinImpute(data)
+		imputed.values[known_idx] = data.values[known_idx]
+		return imputed
+
 	imputed = data.copy()
 
 	for i1 in range(len(ccs)):
@@ -70,7 +80,7 @@ def spImpute_with_corMat(data, meta, cor_mat, epislon=0.6, n=1): # multiprocessi
 		m = len(cc_spots)
 		s = int(len(other_spots) / 10)
 		values = np.zeros(shape=(m, data.shape[1], 10))
-		for i2 in range(10): 
+		for i2 in range(10):
 			np.random.seed(i2)
 			sampled_spot = list(np.random.choice(other_spots, s, replace=False))
 			ri_spots = cc_spots + sampled_spot
@@ -109,7 +119,7 @@ def rankMinImpute(data):
 	while lam > lamIni * tol:
 		for i in range(20):
 			f0 = f1
-			z = np.zeros(n) 
+			z = np.zeros(n)
 			z[idx] = y - x[idx]
 			b = x + (1/alpha) * z
 			B = np.reshape(b, good_data.shape)
@@ -119,7 +129,7 @@ def rankMinImpute(data):
 			X[X<0] = 0
 			x = X.ravel()
 			f1 = np.linalg.norm(y - x[idx], 2) + np.linalg.norm(x, 1) * lam
-			e1 = np.linalg.norm(f1-f0)/np.linalg.norm(f1+f0)			
+			e1 = np.linalg.norm(f1-f0)/np.linalg.norm(f1+f0)
 			if e1 < tol:
 				break
 		e2 = np.linalg.norm(y-x[idx])
@@ -139,8 +149,10 @@ def softThreshold(s, l):
 	return np.multiply(np.sign(s), np.absolute(s - l))
 
 def run_impute(param):
+#	start_time = time()
 	ho_data, meta_data, cor_mat, ep = param
 	imputed = spImpute_with_corMat(ho_data, meta_data, cor_mat, ep)
+#	print("Evaluating epsilon = %.2f done in %.1f seconds." (ep, time() - start_time))
 	return imputed
 
 def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold, n=1):
@@ -208,21 +220,20 @@ def select_ep(original_data, meta_data, k=2, n=1):
 	print(original_data.shape)
 	training_data = utils.filterGene_sparsity(original_data,0.8)
 	print(training_data.shape)
-	
 	# generate k fold cross validation datasets
 	ho_dsets, ho_masks = generate_cv_masks(training_data)
-	perf_dfs = []
-	for fd in range(2):
-		ho_data, ho_mask = ho_dsets[fd], ho_masks[fd]
-		perf_df = epislon_perf(ho_data, ho_mask, meta_data, training_data, cor_mat, fd, n)
-		perf_dfs.append(perf_df)
-	perf_dfs = pd.concat(perf_dfs)
-	print(perf_dfs)
+#	perf_dfs = []
+#	for fd in range(2):
+#		ho_data, ho_mask = ho_dsets[fd], ho_masks[fd]
+#		perf_df = epislon_perf(ho_data, ho_mask, meta_data, training_data, cor_mat, fd, n)
+#		perf_dfs.append(perf_df)
+#	perf_dfs = pd.concat(perf_dfs)
+#	print(perf_dfs)
+	perf_dfs = epislon_perf(ho_dsets[0], ho_masks[0], meta_data, training_data, cor_mat, 0, n)
 	PCC_dfs = perf_dfs.loc[:, ["ModelName", "PCC"]]
 	median_pcc_dfs = PCC_dfs.groupby("ModelName").median()
 	median_pcc_dfs['epislon'] = median_pcc_dfs.index.to_numpy()
 	ep = median_pcc_dfs.loc[median_pcc_dfs.PCC == median_pcc_dfs.PCC.max(),"epislon"].tolist()[0]
-	print(ep)
 	end_time = time()
 	print("Epislon %.2f is selected in %.1f seconds." %(ep, end_time - start_time))
 	return ep

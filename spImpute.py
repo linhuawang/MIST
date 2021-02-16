@@ -14,7 +14,7 @@ import sys
 from neighbors import *
 from shutil import rmtree
 from scipy.sparse import csgraph
-# from tqdm import tqdm, trange
+from tqdm import tqdm, trange
 import utils
 
 def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented yet
@@ -27,14 +27,14 @@ def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented ye
 	known_idx = np.where(data.values)
 	imputed = data.copy()
 
-	for i1 in range(len(ccs)):
+	for i1 in trange(len(ccs)):
 		cc = ccs[i1]
 		cc_spots = [c.name for c in cc]
 		other_spots = [s for s in spots if s not in cc_spots]
 		m = len(cc_spots)
 		s = int(len(other_spots) / 10)
 		values = np.zeros(shape=(m, data.shape[1], 10))
-		for i2 in range(10): 
+		for i2 in trange(10): 
 			np.random.seed(i2)
 			sampled_spot = list(np.random.choice(other_spots, s, replace=False))
 			ri_spots = cc_spots + sampled_spot
@@ -45,7 +45,6 @@ def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented ye
 
 	assert np.all(data.values[known_idx] > 0)
 	imputed.values[known_idx] = data.values[known_idx]
-
 	#end_time = time()
 	#print("Imptuation finished in %.2f seconds." %(end_time - start_time))
 	return imputed, f
@@ -58,14 +57,15 @@ def spImpute_with_corMat(data, meta, cor_mat, epislon=0.6, n=1): # multiprocessi
 	known_idx = np.where(data.values)
 	imputed = data.copy()
 
-	for i1 in range(len(ccs)):
+	for i1 in trange(len(ccs)):
 		cc = ccs[i1]
 		cc_spots = [c.name for c in cc]
 		other_spots = [s for s in spots if s not in cc_spots]
 		m = len(cc_spots)
 		s = int(len(other_spots) / 10)
 		values = np.zeros(shape=(m, data.shape[1], 10))
-		for i2 in range(10): 
+
+		for i2 in trange(10): 
 			np.random.seed(i2)
 			sampled_spot = list(np.random.choice(other_spots, s, replace=False))
 			ri_spots = cc_spots + sampled_spot
@@ -133,15 +133,14 @@ def rankMinImpute(data):
 def softThreshold(s, l):
 	return np.multiply(np.sign(s), np.absolute(s - l))
 
-def run_impute(param):
-	ho_data, meta_data, cor_mat, ep = param
-	imputed = spImpute_with_corMat(ho_data, meta_data, cor_mat, ep)
-	return imputed
+# def run_impute(param):
+# 	ho_data, meta_data, cor_mat, ep = param
+# 	imputed = spImpute_with_corMat(ho_data, meta_data, cor_mat, ep)
+# 	return imputed
 
-def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold, n=1):
+def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold):
 	pre_eps = np.arange(0.2, 1.0, 0.1)
 	eps = []
-
 	nodes = construct_graph(meta_data)
 	cc_lens = []
 	for ep in np.flip(pre_eps):
@@ -152,19 +151,11 @@ def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold, n=1):
 			cc_lens.append(len(ccs))
 			eps.append(ep)
 
-	params = []
-	for ep in eps:
-		params.append([ho_data, meta_data, cor_mat, ep])
-
-	p = Pool(n)
-	imputed = p.map(run_impute, params)
-	p.close()
+	print("Start evaluating epsilon...")
 	perf_dfs = []
-	ori_data = np.log2(ori_data + 1)
-	ho_data = np.log2(ho_data + 1)
-	for ep, im in zip(eps, imputed):
-		im = np.log2(im + 1)
-		perf_df = utils.wholeSlidePerformance(ori_data, ho_mask, ho_data, im, ep)
+	for ep in eps:
+		im = np.log2(spImpute_with_corMat(ho_data, meta_data, cor_mat, ep) + 1)
+		perf_df = utils.wholeSlidePerformance(np.log2(ori_data + 1), ho_mask, np.log2(ho_data + 1), im, ep)
 		perf_dfs.append(perf_df)
 	perf_dfs = pd.concat(perf_dfs)
 	perf_dfs = perf_dfs.sort_values("PCC")
@@ -196,7 +187,7 @@ def generate_cv_masks(original_data, k=2):
 			ho_dsets[i].loc[spot_sampled, gene] = 0
 	return ho_dsets, ho_masks
 
-def select_ep(original_data, meta_data, k=2, n=1):
+def select_ep(original_data, meta_data, k=2):
 	start_time = time()
 	original_data =  utils.cpm_norm(original_data, log=False)
 	cor_mat = spot_PCA_sims(original_data)
@@ -209,7 +200,7 @@ def select_ep(original_data, meta_data, k=2, n=1):
 	perf_dfs = []
 	for fd in range(2):
 		ho_data, ho_mask = ho_dsets[fd], ho_masks[fd]
-		perf_df = epislon_perf(ho_data, ho_mask, meta_data, training_data, cor_mat, fd, n)
+		perf_df = epislon_perf(ho_data, ho_mask, meta_data, training_data, cor_mat, fd)
 		perf_dfs.append(perf_df)
 	perf_dfs = pd.concat(perf_dfs)
 	print(perf_dfs)
@@ -225,7 +216,7 @@ def select_ep(original_data, meta_data, k=2, n=1):
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Algorithm variables.')
 	parser.add_argument('-f', '--countpath', type=str,
-                    help='path to the input count matrix,\
+                    help='path to the input raw count matrix,\
                     1st row is the gene name and 1st column is spot ID')
 	parser.add_argument('-e', '--epislon', type=float, default=0.6,
                     help='threshold to filter low confident edges')

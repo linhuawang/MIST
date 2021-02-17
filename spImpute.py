@@ -189,7 +189,7 @@ def generate_cv_masks(original_data, k=2):
 
 def select_ep(original_data, meta_data, k=2):
 	start_time = time()
-	original_data =  utils.cpm_norm(original_data, log=False)
+	#original_data =  utils.cpm_norm(original_data, log=False)
 	cor_mat = spot_PCA_sims(original_data)
 	print(original_data.shape)
 	training_data = utils.filterGene_sparsity(original_data,0.8)
@@ -222,26 +222,29 @@ if __name__ == "__main__":
                     help='threshold to filter low confident edges')
 	parser.add_argument('-o', '--out_fn', type=str, default='none',
                     help='File path to save the imputed values.')
-	parser.add_argument('-m', '--member_fn', type=str, default='none',
-                    help='File path to save the other files.')
+	parser.add_argument('-l', '--norm', type=int, default=1,
+                    help='CPM normalization or not. 1 for yes 0 for no.')
 	parser.add_argument('-s', '--select', type=int, default=1,
 					help = 'whether infer epislon using holdout test or not.')
-	parser.add_argument('-n', '--ncore', type=int, default=1,
-					help = 'number of processors')
 
 	args = parser.parse_args()
 	count_fn = args.countpath
 	epi = args.epislon
 	out_fn = args.out_fn
-	ncore = args.ncore
+	norm = args.norm
 	select = args.select
+
 	count_matrix, meta_data = read_ST_data(count_fn)
 	count_matrix = count_matrix.fillna(0)
+
+	if norm == 1:
+		count_matrix = utils.cpm_norm(count_matrix,log=False)
+
 	if select == 1: # takes hours even with multiprocessing
 		ep = select_ep(count_matrix, meta_data, k=2, n=ncore)
 	else:
 		ep = epi
-	count_matrix = utils.cpm_norm(count_matrix)
+
 	imputed, figure = spImpute(count_matrix, meta_data, ep, ncore)
 
 	# member_fn = args.member_fn

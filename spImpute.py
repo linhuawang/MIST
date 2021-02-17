@@ -17,7 +17,7 @@ from scipy.sparse import csgraph
 from tqdm import tqdm, trange
 import utils
 
-def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented yet
+def spImpute(data, meta, epislon=0.6): # multiprocessing not implemented yet
 	#start_time = time()
 	cor_mat = spot_PCA_sims(data)
 	nodes = construct_graph(meta)
@@ -49,7 +49,7 @@ def spImpute(data, meta, epislon=0.6, n=1): # multiprocessing not implemented ye
 	#print("Imptuation finished in %.2f seconds." %(end_time - start_time))
 	return imputed, f
 
-def spImpute_with_corMat(data, meta, cor_mat, epislon=0.6, n=1): # multiprocessing not implemented yet
+def spImpute_with_corMat(data, meta, cor_mat, epislon=0.6): # multiprocessing not implemented yet
 	#start_time = time()
 	nodes = construct_graph(meta)
 	ccs = spatialCCs(nodes, cor_mat, epislon)
@@ -241,11 +241,11 @@ if __name__ == "__main__":
 		count_matrix = utils.cpm_norm(count_matrix,log=False)
 
 	if select == 1: # takes hours even with multiprocessing
-		ep = select_ep(count_matrix, meta_data, k=2, n=ncore)
+		ep = select_ep(count_matrix, meta_data, k=2)
 	else:
 		ep = epi
 
-	imputed, figure = spImpute(count_matrix, meta_data, ep, ncore)
+	imputed, figure = spImpute(count_matrix, meta_data, ep)
 
 	# member_fn = args.member_fn
 	# imputed = CCRM(count_matrix, meta_data, epi)

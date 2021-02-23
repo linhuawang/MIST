@@ -36,7 +36,6 @@ class Node:
 		return (self.x == node.x and self.y == node.y)
 
 class CC:
-
 	def __init__(self, nodes, name):
 		self.nodes = nodes
 		self.name = name
@@ -55,7 +54,7 @@ class CC:
 
 
 
-def construct_graph(meta_data):
+def construct_graph(meta_data,radius=2):
 	xs, ys = meta_data.iloc[:,0].tolist(), meta_data.iloc[:,1].tolist()
 	spots = meta_data.index.tolist()
 	nodes = []
@@ -64,12 +63,11 @@ def construct_graph(meta_data):
 
 	for node1 in nodes:
 		for node2 in nodes:
-			dist = np.linalg.norm(np.array((node1.x, node1.y)) - 
+			dist = np.linalg.norm(np.array((node1.x, node1.y)) -
 				np.array((node2.x, node2.y)))
-			if dist < 2:
+			if dist < radius:
 				node1.add_neighbor(node2)
 				node2.add_neighbor(node1)
-
 	return nodes
 
 def removeNodes(nodes, cnns):
@@ -101,7 +99,7 @@ def spatialCCs(nodes, cor_mat, epi=0, merge=5):
 				k += 1
 		if len(largeCCs) == 0:
 			return [small_nodes]
-
+		merge_dict = []
 		for small_node in small_nodes:
 			dist = np.Inf
 			idx = 0
@@ -109,7 +107,10 @@ def spatialCCs(nodes, cor_mat, epi=0, merge=5):
 				if largeCCs[i].distance(small_node) < dist:
 					dist = largeCCs[i].distance(small_node)
 					idx = i
-			largeCCs[idx].append(small_node)
+			#largeCCs[idx].append(small_node)
+			merge_dict[small_node.name] = idx
+		for small_node in small_nodes:
+			largeCCs[merge_dict[small_node.name]].append(small_node)
 		return [largeCC.nodes for largeCC in largeCCs]
 	return ccs
 
@@ -133,8 +134,8 @@ def plot_ccs(ccs, meta, title="none"):
 	cc10, cc2, cc1 = 0, 0, 0
 	xmin, xmax = meta.iloc[:, 0].min(), meta.iloc[:, 0].max()
 	ymin, ymax = meta.iloc[:, 1].min(), meta.iloc[:, 1].max()
-	colors = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
-				'#911eb4', '#46f0f0', '#f032e6','#bcf60c', '#fabebe', 
+	colors = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
+				'#911eb4', '#46f0f0', '#f032e6','#bcf60c', '#fabebe',
 				'#008080', '#e6beff','#9a6324', '#fffac8', '#800000',
 				 '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080',
 				  '#ffffff', '#000000']
@@ -167,7 +168,7 @@ def detectSDEs(fn, ep, log=False):
 
 	nodes = construct_graph(meta)
 	ccs = spatialCCs(nodes, cor_mat, ep, merge=0)
-	
+
 	genes = count_filt.columns.tolist()
 	cc_dfs = []
 	for i in range(len(ccs)):
@@ -192,9 +193,6 @@ def detectSDEs(fn, ep, log=False):
 	print(cc_dfs)
 	return cc_dfs
 
-
-
-
 if __name__ == "__main__":
 	# #plot_connected_neighbors("B06_E1__17_14", cnns4, meta_data,"")
 	# data, meta = read_ST_data("/Users/linhuaw/Documents/STICK/results/mouse_wt/logCPM.csv")
@@ -207,4 +205,3 @@ if __name__ == "__main__":
 		ccs = spatialCCs(nodes, cor_mat, e)
 		print(len(ccs))
 		plot_ccs(ccs, meta)
-

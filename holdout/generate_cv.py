@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import sys
 
-sys.path.append("../src")
+sys.path.append("../src/")
 import utils
 from time import time
 from os.path import exists

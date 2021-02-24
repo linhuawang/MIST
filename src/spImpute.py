@@ -17,11 +17,13 @@ from scipy.sparse import csgraph
 from tqdm import tqdm, trange
 import utils
 
-def spImpute(data, meta, epislon=0.6): # multiprocessing not implemented yet
+def spImpute(data, meta, epislon=0.6, radius=2, merge=5): # multiprocessing not implemented yet
 	#start_time = time()
 	cor_mat = spot_PCA_sims(data)
-	nodes = construct_graph(meta)
-	ccs = spatialCCs(nodes, cor_mat, epislon)
+	nodes = construct_graph(meta, radius)
+	ccs = spatialCCs(nodes, cor_mat, epislon, merge)
+	print("#CCs: %d" %len(ccs))
+
 	f = plot_ccs(ccs, meta, "epsilon = %.2f" %epislon)
 	spots = data.index.tolist()
 	known_idx = np.where(data.values)
@@ -194,7 +196,6 @@ def select_ep(original_data, meta_data, k=2):
 	print(original_data.shape)
 	training_data = utils.filterGene_sparsity(original_data,0.8)
 	print(training_data.shape)
-	
 	# generate k fold cross validation datasets
 	ho_dsets, ho_masks = generate_cv_masks(training_data)
 	perf_dfs = []
@@ -226,14 +227,18 @@ if __name__ == "__main__":
                     help='CPM normalization or not. 1 for yes 0 for no.')
 	parser.add_argument('-s', '--select', type=int, default=1,
 					help = 'whether infer epislon using holdout test or not.')
-
+	parser.add_argument('-r', '--radius', type=int, default=2,
+					help='distance radius in defining edges')
+	parser.add_argument('-m', '--merge', type=int, default=5,
+                                        help='distance radius in defining edges')
 	args = parser.parse_args()
 	count_fn = args.countpath
 	epi = args.epislon
 	out_fn = args.out_fn
 	norm = args.norm
 	select = args.select
-
+	radius = args.radius
+	merge = args.merge
 	count_matrix, meta_data = read_ST_data(count_fn)
 	count_matrix = count_matrix.fillna(0)
 
@@ -245,7 +250,7 @@ if __name__ == "__main__":
 	else:
 		ep = epi
 
-	imputed, figure = spImpute(count_matrix, meta_data, ep)
+	imputed, figure = spImpute(count_matrix, meta_data, ep, radius, merge)
 
 	# member_fn = args.member_fn
 	# imputed = CCRM(count_matrix, meta_data, epi)

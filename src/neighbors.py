@@ -99,7 +99,7 @@ def spatialCCs(nodes, cor_mat, epi=0, merge=5):
 				k += 1
 		if len(largeCCs) == 0:
 			return [small_nodes]
-		merge_dict = []
+		merge_dict = {}
 		for small_node in small_nodes:
 			dist = np.Inf
 			idx = 0

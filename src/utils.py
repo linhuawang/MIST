@@ -19,7 +19,8 @@ from sklearn.decomposition import PCA
 def data_norm(data, method='median'):
     assert method in ['median', 'cpm', 'logCPM']
     if method == "median":
-        data = data.apply(lambda x: x * data.sum(axis=0).median()/ x.sum() , axis=1)
+        med_libSize =  data.sum(axis=1).median()
+        data = data.apply(lambda x: x * med_libSize/ x.sum() , axis=1)
     elif method == "logCPM":
         data = data + 1
         data = data.apply(lambda x: x * (10 ** 6)/ x.sum() , axis=1)

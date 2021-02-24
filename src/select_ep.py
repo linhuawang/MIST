@@ -78,7 +78,7 @@ def select_ep(raw_fn, k=2, n=1):
 	print(original_data.shape)
 	original_data = utils.filterGene_sparsity(original_data,0.8)
 	print(original_data.shape)
-	original_data =  utils.cpm_norm(original_data, log=False)
+	original_data =  utils.data_norm(original_data)
 	# generate k fold cross validation datasets
 	ho_dsets, ho_masks = generate_cv_masks(original_data)
 	perf_dfs = []
@@ -105,4 +105,3 @@ if __name__ == "__main__":
 	else:
 		nCore = 1
 	select_ep(raw_fn, k=2, n=nCore)
-

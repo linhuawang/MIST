@@ -15,16 +15,20 @@ class Node:
 		self.x = x
 		self.y = y
 		self.name = name
+		self.component = 0
 		self.neighbors = []
 
 	def __repr__(self):
 		return "X: %d, Y: %d, spotID: %s, #NBs: %d" %(self.x, self.y, self.name, len(self.neighbors))
 
+	def __eq__(self, obj):
+        return isinstance(obj, Node) and (obj.name == self.name)
+
 	def contain_neighbor(self, node):
 		if len(self.neighbors) == 0:
 			return False
 		for node1 in self.neighbors:
-			if node1.isNode(node):
+			if node1 == node:
 				return True
 		return False
 
@@ -32,8 +36,9 @@ class Node:
 		if not self.contain_neighbor(node):
 			self.neighbors.append(node)
 
-	def isNode(self, node):
-		return (self.x == node.x and self.y == node.y)
+	def assign_component(self, k):
+		self.component=k
+
 
 class CC:
 	def __init__(self, nodes, name):
@@ -51,8 +56,6 @@ class CC:
 	def append(self, node):
 		self.nodes.append(node)
 		self.size += 1
-
-
 
 def construct_graph(meta_data,radius=2):
 	xs, ys = meta_data.iloc[:,0].tolist(), meta_data.iloc[:,1].tolist()

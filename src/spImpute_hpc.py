@@ -103,7 +103,7 @@ def rankMinImpute(data):
 	t1 = time()
 	D = np.ravel(good_data.values) # flattened count matrix
 	idx = np.where(D) # nonzero indices of D
-	y = D[idx] # nonzero observed values 
+	y = D[idx] # nonzero observed values
 	n = np.prod(good_data.shape)
 	err= 1E-12
 	x_initial = np.zeros(np.prod(good_data.shape))
@@ -215,7 +215,6 @@ def generate_cv_masks(original_data, k=2):
 
 def select_ep(original_data, meta_data, k=2, n=1):
 	start_time = time()
-	original_data =  utils.cpm_norm(original_data, log=False)
 	cor_mat = spot_PCA_sims(original_data)
 	print(original_data.shape)
 	training_data = utils.filterGene_sparsity(original_data,0.8)
@@ -253,6 +252,8 @@ if __name__ == "__main__":
 					help = 'whether infer epislon using holdout test or not.')
 	parser.add_argument('-n', '--ncore', type=int, default=1,
 					help = 'number of processors')
+	parser.add_argument('-l', '--norm', type=str, default="none",
+                    help='method to normalize data.')
 
 	args = parser.parse_args()
 	count_fn = args.countpath
@@ -260,21 +261,22 @@ if __name__ == "__main__":
 	out_fn = args.out_fn
 	ncore = args.ncore
 	select = args.select
+	norm = args.norm
+	
 	count_matrix, meta_data = read_ST_data(count_fn)
 	count_matrix = count_matrix.fillna(0)
+
+	if norm != "none":
+		count_matrix = utils.data_norm(count_matrix, method=norm)
 	if select == 1: # takes hours even with multiprocessing
 		ep = select_ep(count_matrix, meta_data, k=2, n=ncore)
 	else:
 		ep = epi
-	count_matrix = utils.cpm_norm(count_matrix)
+
 	imputed, figure = spImpute(count_matrix, meta_data, ep, ncore)
 
-	# member_fn = args.member_fn
-	# imputed = CCRM(count_matrix, meta_data, epi)
+
 	if out_fn != "none":
 		imputed.to_csv(out_fn)
 		fig_out = out_fn.split(".csv")[0] + ".png"
 		figure.savefig(fig_out)
-	# # if member_fn != "none":
-	# # 	memberships.to_csv(member_fn)
-

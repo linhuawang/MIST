@@ -36,7 +36,7 @@ def generate_cv_masks(original_data, genes):
 
 def main(data_folder, filt=0.5, read_mask='no'):
 	if read_mask == 'yes':
-		original_data, meta_data = utils.read_ST_data(data_folder + "/cpm.csv")
+		original_data, meta_data = utils.read_ST_data(data_folder + "/norm.csv")
 		ho_mask = pd.read_csv(data_folder + "/ho_data_%d.csv" %seed, index_col=0)
 		ho_data = pd.read_csv(data_folder + "/ho_data_%d.csv" %seed, index_col=0)
 	else:
@@ -44,9 +44,9 @@ def main(data_folder, filt=0.5, read_mask='no'):
 		original_data, meta_data = utils.read_ST_data(data_fn)
 		genes = utils.filterGene_sparsity(original_data,filt).columns.tolist()
 		print(len(genes))
-		if not exists(data_folder + "/cpm.csv"):
-			original_data =  utils.cpm_norm(original_data)
-			original_data.to_csv(data_folder + "/cpm.csv")
+		if not exists(data_folder + "/norm.csv"):
+			original_data =  utils.data_norm(original_data,method="median")
+			original_data.to_csv(data_folder + "/norm.csv")
 		# generate 5 fold cross validation datasets
 		ho_dsets, ho_masks = generate_cv_masks(original_data, genes)
 		for fd in range(5):

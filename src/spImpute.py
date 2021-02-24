@@ -18,31 +18,36 @@ from tqdm import tqdm, trange
 import utils
 
 def spImpute(data, meta, epislon=0.6, radius=2, merge=5): # multiprocessing not implemented yet
-	#start_time = time()
+	start_time = time()
 	cor_mat = spot_PCA_sims(data)
 	nodes = construct_graph(meta, radius)
+	node_time = time()
+	print("Graph constructed in %.1f seconds." %(node_time - start_time))
 	ccs = spatialCCs(nodes, cor_mat, epislon, merge)
-	print("#CCs: %d" %len(ccs))
+	cc_time = time()
+	print("%d connected components detected in %.1f seconds."\
+	 				%(len(ccs), cc_time - node_time))
 
 	f = plot_ccs(ccs, meta, "epsilon = %.2f" %epislon)
 	spots = data.index.tolist()
 	known_idx = np.where(data.values)
 	imputed = data.copy()
-
-	for i1 in trange(len(ccs)):
+	nExperts = 10
+	for i1 in range(len(ccs)):
 		cc = ccs[i1]
 		cc_spots = [c.name for c in cc]
 		other_spots = [s for s in spots if s not in cc_spots]
 		m = len(cc_spots)
 		s = int(len(other_spots) / 10)
-		values = np.zeros(shape=(m, data.shape[1], 10))
-		for i2 in trange(10): 
+		values = np.zeros(shape=(m, data.shape[1], nExperts))
+		for i2 in range(nExperts):
 			np.random.seed(i2)
 			sampled_spot = list(np.random.choice(other_spots, s, replace=False))
 			ri_spots = cc_spots + sampled_spot
 			ri_impute = rankMinImpute(data.loc[ri_spots,:])
 			values[:,:,i2] = ri_impute.values[:m, :]
-			print(i1, i2)
+			print("Outer: %d/%d, inner: %d/%d" %(i1, len(ccs), i2, nExperts))
+
 		imputed.loc[cc_spots,:] = np.mean(values, axis=2)
 
 	assert np.all(data.values[known_idx] > 0)
@@ -58,16 +63,16 @@ def spImpute_with_corMat(data, meta, cor_mat, epislon=0.6): # multiprocessing no
 	spots = data.index.tolist()
 	known_idx = np.where(data.values)
 	imputed = data.copy()
-
-	for i1 in trange(len(ccs)):
+	nExperts = 5
+	for i1 in range(len(ccs)):
 		cc = ccs[i1]
 		cc_spots = [c.name for c in cc]
 		other_spots = [s for s in spots if s not in cc_spots]
 		m = len(cc_spots)
 		s = int(len(other_spots) / 10)
-		values = np.zeros(shape=(m, data.shape[1], 10))
+		values = np.zeros(shape=(m, data.shape[1], nExperts))
 
-		for i2 in trange(10): 
+		for i2 in range(nExperts):
 			np.random.seed(i2)
 			sampled_spot = list(np.random.choice(other_spots, s, replace=False))
 			ri_spots = cc_spots + sampled_spot
@@ -90,7 +95,7 @@ def rankMinImpute(data):
 	t1 = time()
 	D = np.ravel(good_data.values) # flattened count matrix
 	idx = np.where(D) # nonzero indices of D
-	y = D[idx] # nonzero observed values 
+	y = D[idx] # nonzero observed values
 	n = np.prod(good_data.shape)
 	err= 1E-12
 	x_initial = np.zeros(np.prod(good_data.shape))
@@ -106,7 +111,7 @@ def rankMinImpute(data):
 	while lam > lamIni * tol:
 		for i in range(20):
 			f0 = f1
-			z = np.zeros(n) 
+			z = np.zeros(n)
 			z[idx] = y - x[idx]
 			b = x + (1/alpha) * z
 			B = np.reshape(b, good_data.shape)
@@ -116,7 +121,7 @@ def rankMinImpute(data):
 			X[X<0] = 0
 			x = X.ravel()
 			f1 = np.linalg.norm(y - x[idx], 2) + np.linalg.norm(x, 1) * lam
-			e1 = np.linalg.norm(f1-f0)/np.linalg.norm(f1+f0)			
+			e1 = np.linalg.norm(f1-f0)/np.linalg.norm(f1+f0)
 			if e1 < tol:
 				break
 		e2 = np.linalg.norm(y-x[idx])
@@ -134,11 +139,6 @@ def rankMinImpute(data):
 
 def softThreshold(s, l):
 	return np.multiply(np.sign(s), np.absolute(s - l))
-
-# def run_impute(param):
-# 	ho_data, meta_data, cor_mat, ep = param
-# 	imputed = spImpute_with_corMat(ho_data, meta_data, cor_mat, ep)
-# 	return imputed
 
 def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold):
 	pre_eps = np.arange(0.2, 1.0, 0.1)
@@ -191,7 +191,6 @@ def generate_cv_masks(original_data, k=2):
 
 def select_ep(original_data, meta_data, k=2):
 	start_time = time()
-	#original_data =  utils.cpm_norm(original_data, log=False)
 	cor_mat = spot_PCA_sims(original_data)
 	print(original_data.shape)
 	training_data = utils.filterGene_sparsity(original_data,0.8)
@@ -223,8 +222,8 @@ if __name__ == "__main__":
                     help='threshold to filter low confident edges')
 	parser.add_argument('-o', '--out_fn', type=str, default='none',
                     help='File path to save the imputed values.')
-	parser.add_argument('-l', '--norm', type=int, default=1,
-                    help='CPM normalization or not. 1 for yes 0 for no.')
+	parser.add_argument('-l', '--norm', type=str, default="none",
+                    help='method to normalize data.')
 	parser.add_argument('-s', '--select', type=int, default=1,
 					help = 'whether infer epislon using holdout test or not.')
 	parser.add_argument('-r', '--radius', type=int, default=2,
@@ -242,8 +241,8 @@ if __name__ == "__main__":
 	count_matrix, meta_data = read_ST_data(count_fn)
 	count_matrix = count_matrix.fillna(0)
 
-	if norm == 1:
-		count_matrix = utils.cpm_norm(count_matrix,log=False)
+	if norm != "none":
+		count_matrix = utils.data_norm(count_matrix, method=norm)
 
 	if select == 1: # takes hours even with multiprocessing
 		ep = select_ep(count_matrix, meta_data, k=2)
@@ -252,12 +251,7 @@ if __name__ == "__main__":
 
 	imputed, figure = spImpute(count_matrix, meta_data, ep, radius, merge)
 
-	# member_fn = args.member_fn
-	# imputed = CCRM(count_matrix, meta_data, epi)
 	if out_fn != "none":
 		imputed.to_csv(out_fn)
 		fig_out = out_fn.split(".csv")[0] + ".png"
 		figure.savefig(fig_out)
-	# # if member_fn != "none":
-	# # 	memberships.to_csv(member_fn)
-

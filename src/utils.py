@@ -16,8 +16,11 @@ from scipy.stats import percentileofscore as percentile
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
-def cpm_norm(data, log=False):
-    if log:
+def data_norm(data, method='median'):
+    assert method in ['median', 'cpm', 'logCPM']
+    if method == "median":
+        data = data.apply(lambda x: x * data.sum(axis=0).median()/ x.sum() , axis=1)
+    elif method == "logCPM":
         data = data + 1
         data = data.apply(lambda x: x * (10 ** 6)/ x.sum() , axis=1)
         data = np.log2(data)
@@ -142,4 +145,3 @@ if __name__ == "__main__":
     cors2 = spot_exp_sims(count_matrix)
     sns.heatmap(data=cors2, vmin=0, vmax=1, cmap="Blues")
     plt.show()
-    

@@ -5,7 +5,9 @@ sys.path.append("../src/")
 #from spImpute import rankMinImpute
 import spImpute
 import neighbors
-import Data
+from Data import Data
+import numpy as np
+import pandas as pd
 ## data: n samples by p features
 ## all data should be normalized
 class Imputer(object):
@@ -18,19 +20,19 @@ class Imputer(object):
 
 	def fit_transform(self):
 		if self.name == "MAGIC":
-			return MAGIC(data.count)
+			return MAGIC(self.data.count)
 		elif self.name == "knnSmooth":
-			return knnSmooth(data.count, k=4)
+			return knnSmooth(self.data.count, k=4)
 		elif self.name == "mcImpute":
-			return mcImpute(data.count)
+			return mcImpute(self.data.count)
 		elif self.name == "spKNN":
-			return spKNN(data.count, data.nodes)
+			return spKNN(self.data.count, self.data.nodes)
 		else:
-			imputed, _ = spImute(data)[0] # fixed epsilon
+			imputed, _ = spImpute.spImpute(self.data)[0] # fixed epsilon
 			return imputed
 
 def MAGIC(data):
-	magic_operator = magic.MAGIC()
+	magic_operator = magic.MAGIC(verbose=0)
 	return magic_operator.fit_transform(data)
 
 def knnSmooth(data, k=4):
@@ -43,7 +45,7 @@ def mcImpute(data):
 def spKNN(data, nodes):
 	## construct graph
 	nb_df = pd.DataFrame(index=data.index, columns=data.index, 
-							values=np.zeros((data.shape[0], data.shape[0])))
+							data=np.zeros((data.shape[0], data.shape[0])))
 	for node in nodes:
 		spot = node.name
 		nbs = [nb.name for nb in node.neighbors]

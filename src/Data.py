@@ -5,7 +5,7 @@ import neighbors
 class Data(object):
 	"""docstring for Data"""
 	def __init__(self, countpath, radius=2, merge=5, norm="none"):
-		self.filename = arg.countpath
+		self.filename = countpath
 		self.norm = norm
 		self.radius = radius
 		count, meta = read_ST_data(self.filename)

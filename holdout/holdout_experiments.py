@@ -1,6 +1,7 @@
 from imputers import *
 import os
 import sys
+from Data import Data
 
 if __name__ == '__main__':
 	folder = sys.argv[1]

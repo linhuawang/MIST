@@ -99,9 +99,9 @@ def _calculate_pc_scores(matrix, d, seed=0):
     tmatrix = pca.fit_transform(tmatrix.T).T
     t1 = time.time()
     var_explained = np.cumsum(pca.explained_variance_ratio_)[-1]
-    print('\tPCA took %.1f s.' % (t1-t0)); sys.stdout.flush()
-    print('\tThe fraction of variance explained by the top %d PCs is %.1f %%.'
-          % (d, 100*var_explained))
+    # print('\tPCA took %.1f s.' % (t1-t0)); sys.stdout.flush()
+    # print('\tThe fraction of variance explained by the top %d PCs is %.1f %%.'
+    #       % (d, 100*var_explained))
 
     return tmatrix
 
@@ -176,8 +176,8 @@ def knn_smoothing(X, k, d=10, dither=0.03, seed=0):
     if d < 1 or d > num_pcs:
         raise ValueError('d must be between 1 and %d.' % num_pcs)
 
-    print('Performing kNN-smoothing v2.1 with k=%d, d=%d, and dither=%.3f...'
-          % (k, d, dither))
+    # print('Performing kNN-smoothing v2.1 with k=%d, d=%d, and dither=%.3f...'
+    #       % (k, d, dither))
     sys.stdout.flush()
 
     t0_total = time.time()
@@ -191,7 +191,7 @@ def knn_smoothing(X, k, d=10, dither=0.03, seed=0):
     
     for t in range(1, num_steps+1):
         k_step = min(pow(2, t), k)
-        print('Step %d/%d: Smooth using k=%d' % (t, num_steps, k_step))
+        # print('Step %d/%d: Smooth using k=%d' % (t, num_steps, k_step))
         sys.stdout.flush()
         
         Y = _calculate_pc_scores(S, d, seed=seed)
@@ -206,7 +206,7 @@ def knn_smoothing(X, k, d=10, dither=0.03, seed=0):
         t0 = time.time()
         D = _calculate_pairwise_distances(Y)
         t1 = time.time()
-        print('\tCalculating pair-wise distance matrix took %.1f s.' % (t1-t0))
+        # print('\tCalculating pair-wise distance matrix took %.1f s.' % (t1-t0))
         sys.stdout.flush()
         
         t0 = time.time()
@@ -216,12 +216,12 @@ def knn_smoothing(X, k, d=10, dither=0.03, seed=0):
             S[:, j] = np.sum(X[:, ind], axis=1)
 
         t1 = time.time()
-        print('\tCalculating the smoothed expression matrix took %.1f s.'
-              % (t1-t0))
+        # print('\tCalculating the smoothed expression matrix took %.1f s.'
+        #       % (t1-t0))
         sys.stdout.flush()
 
     t1_total = time.time()
-    print('kNN-smoothing finished in %.1f s.' % (t1_total-t0_total))
+    # print('kNN-smoothing finished in %.1f s.' % (t1_total-t0_total))
     sys.stdout.flush()
     return S
 # def main(k, d, dither, fpath, saveto, seed, sep, test):

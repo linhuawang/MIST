@@ -22,7 +22,7 @@ class Node:
 		return "X: %d, Y: %d, spotID: %s, #NBs: %d" %(self.x, self.y, self.name, len(self.neighbors))
 
 	def isNode(self, node):
-        return (self.x == node.x and self.y == node.y)
+		return (self.x == node.x and self.y == node.y)
 
 	def contain_neighbor(self, node):
 		if len(self.neighbors) == 0:

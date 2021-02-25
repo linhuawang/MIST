@@ -21,14 +21,14 @@ class Node:
 	def __repr__(self):
 		return "X: %d, Y: %d, spotID: %s, #NBs: %d" %(self.x, self.y, self.name, len(self.neighbors))
 
-	def __eq__(self, obj):
-        return isinstance(obj, Node) and (obj.name == self.name)
+	def isNode(self, node):
+        return (self.x == node.x and self.y == node.y)
 
 	def contain_neighbor(self, node):
 		if len(self.neighbors) == 0:
 			return False
 		for node1 in self.neighbors:
-			if node1 == node:
+			if if node1.isNode(node):
 				return True
 		return False
 

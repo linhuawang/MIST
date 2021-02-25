@@ -28,7 +28,7 @@ class Node:
 		if len(self.neighbors) == 0:
 			return False
 		for node1 in self.neighbors:
-			if if node1.isNode(node):
+			if node1.isNode(node):
 				return True
 		return False
 

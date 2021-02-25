@@ -40,11 +40,6 @@ def filterGene_sparsity(count_matrix, sparsity_ratio=0.5):
     genes = gene_sparsity[gene_sparsity >=  sparsity_ratio].index
     return count_matrix.loc[:,genes]
 
-def spot_exp_sims(count_matrix, method="pearson"):
-    assert method in ['pearson', 'kendall', 'spearman']
-    spot_cors = filterGene_std(count_matrix).transpose().corr(method=method)
-    return spot_cors
-
 def spot_PCA_sims(count_matrix, method="pearson"):
     np.random.seed(2021)
     assert method in ['pearson', 'kendall', 'spearman']
@@ -55,6 +50,25 @@ def spot_PCA_sims(count_matrix, method="pearson"):
                          index=count_matrix.index)
     spot_cors = pd.DataFrame(pca_df.transpose()).corr(method=method)
     return spot_cors
+
+def spot_euc2_aff(slide_meta):
+    sample_ids = slide_meta.index.tolist()
+    xs = slide_meta.iloc[:,0].to_numpy()
+    ys = slide_meta.iloc[:,1].to_numpy()
+    nspot = len(sample_ids)
+    aff_mat = np.zeros((nspot, nspot))
+    for i in range(nspot):
+            affs = []
+            for j in range(nspot):
+                if i == j:
+                    sim = 0
+                else:
+                    dist_square = np.power(xs[i]-xs[j], 2) + np.power(ys[i]-ys[j], 2)
+                    sim = 1/ (dist_square + 1)
+                affs.append(sim)
+            aff_mat[i,:] = affs
+    aff_df = pd.DataFrame(data=aff_mat, columns = sample_ids, index= sample_ids)
+    return aff_df
 
 def spotPerformance(ori, mask, meta, model_data, model_name):
     spots = ori.index.tolist()
@@ -129,8 +143,6 @@ def read_ST_data(count_fn, sep=","):
                          "coordY": [int(i.split("x")[1]) for i in data.index.tolist()]},
                          index = data.index)
     return data, meta
-
-
 
 if __name__ == "__main__":
     count_matrix = pd.read_csv("/Users/linhuaw/Documents/STICK/results/mouse_wt/logCPM.csv", index_col=0)

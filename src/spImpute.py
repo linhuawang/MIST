@@ -16,19 +16,24 @@ from shutil import rmtree
 from scipy.sparse import csgraph
 from tqdm import tqdm, trange
 import utils
+import Data
 
-def spImpute(data, meta, epislon=0.6, radius=2, merge=5): # multiprocessing not implemented yet
+def spImpute(data_obj): # multiprocessing not implemented yet
 	start_time = time()
+	data = data_obj.count
+	meta = data_obj.meta
+	epsilon = data_obj.epsilon
+	radius = data_obj.radius
+	nodes = data_obj.nodes
+	merge = data_obj.merge
 	cor_mat = spot_PCA_sims(data)
-	nodes = construct_graph(meta, radius)
-	node_time = time()
-	print("Graph constructed in %.1f seconds." %(node_time - start_time))
-	ccs = spatialCCs(nodes, cor_mat, epislon, merge)
+	#nodes = construct_graph(meta, radius)
+	ccs = spatialCCs(nodes, cor_mat, epsilon, merge)
 	cc_time = time()
 	print("%d connected components detected in %.1f seconds."\
-	 				%(len(ccs), cc_time - node_time))
+	 				%(len(ccs), cc_time - start_time))
 
-	f = plot_ccs(ccs, meta, "epsilon = %.2f" %epislon)
+	f = plot_ccs(ccs, meta, "epsilon = %.2f" %epsilon)
 	spots = data.index.tolist()
 	known_idx = np.where(data.values)
 	imputed = data.copy()
@@ -238,18 +243,18 @@ if __name__ == "__main__":
 	select = args.select
 	radius = args.radius
 	merge = args.merge
-	count_matrix, meta_data = read_ST_data(count_fn)
-	count_matrix = count_matrix.fillna(0)
 
-	if norm != "none":
-		count_matrix = utils.data_norm(count_matrix, method=norm)
+	data = Data(countpath, norm, radius, merge)
+
 
 	if select == 1: # takes hours even with multiprocessing
-		ep = select_ep(count_matrix, meta_data, k=2)
+		ep = select_ep(data.count, data.meta, k=2)
 	else:
 		ep = epi
 
-	imputed, figure = spImpute(count_matrix, meta_data, ep, radius, merge)
+	data.update_ep(ep)
+
+	imputed, figure = spImpute(data)
 
 	if out_fn != "none":
 		imputed.to_csv(out_fn)

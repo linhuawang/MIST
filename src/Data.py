@@ -11,8 +11,7 @@ class Data(object):
 		count, meta = read_ST_data(self.filename)
 		count.fillna(0, inplace=True)
 		if norm != "none":
-			count_matrix = data_norm(count_matrix, method=norm)
-
+			count = data_norm(count, method=norm)
 		self.count = count
 		self.meta = meta
 		self.nodes = neighbors.construct_graph(self.meta, self.radius)

@@ -236,7 +236,7 @@ if __name__ == "__main__":
 	radius = args.radius
 	merge = args.merge
 
-	data = Data(count_fn, norm, radius, merge)
+	data = Data.Data(count_fn, radius, merge, norm)
 
 
 	if select == 1: # takes hours even with multiprocessing

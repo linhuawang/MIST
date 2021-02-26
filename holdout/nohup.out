@@ -1,0 +1,15 @@
+[0, MAGIC] imputed ../../data/holdout_test/v2/slideseq/ho_data_0.csv.
+[0, knnSmooth] imputed ../../data/holdout_test/v2/slideseq/ho_data_0.csv.
+[0, mcImpute] imputed ../../data/holdout_test/v2/slideseq/ho_data_0.csv.
+[0, spKNN] imputed ../../data/holdout_test/v2/slideseq/ho_data_0.csv.
+92 connected components detected in 262.5 seconds.
+Traceback (most recent call last):
+  File "holdout_experiments.py", line 22, in <module>
+    imputed_data = imputer.fit_transform()
+  File "/houston_20t/alexw/ST/spImpute/holdout/imputers.py", line 31, in fit_transform
+    imputed, _ = spImpute.spImpute(self.data) # fixed epsilon
+  File "../src/spImpute.py", line 36, in spImpute
+    f = plot_ccs(ccs, meta, "epsilon = %.2f" %epsilon)
+  File "../src/neighbors.py", line 154, in plot_ccs
+    df.loc[(df.x == x) & (df.y==y),"color"] = colors[i]
+IndexError: list index out of range

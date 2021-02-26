@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
@@ -14,8 +15,13 @@ def evalSpot(ori, mask, meta, model_data, model_name):
 	spots = ori.index.tolist()
 	meta = meta.loc[spots,:]
 	rmses, pccs_all, snrs, mapes = [], [], [], []
+	spots_ho = []
+
 	for spot in spots:
 		genes = mask.columns[mask.loc[spot,:] == 1].tolist()
+		if len(genes) == 0:
+			continue
+		spots_ho.append(spot)
 		tru = ori.loc[spot, genes].to_numpy()
 		imp = model_data.loc[spot, genes].to_numpy()
 		rmses.append(np.sqrt(np.mean(np.square(imp - tru))))
@@ -24,8 +30,8 @@ def evalSpot(ori, mask, meta, model_data, model_name):
 		snrs.append(np.log2((np.sum(imp) +1) /
 			(1+np.sum(np.absolute(tru-imp)))))
 		mapes.append(np.mean(np.divide(np.absolute(imp - tru), tru)))
-
-	spot_perf = pd.DataFrame({"x":meta.iloc[:,0],
+	meta = meta.loc[spots_ho,:]
+	spot_perf = pd.DataFrame({"spot":spots_ho, "x":meta.iloc[:,0],
 								"y":meta.iloc[:,1],
 								"rmse":rmses,
 								"pcc": pccs_all,
@@ -39,20 +45,25 @@ def evalGene(ori, mask, ho, meta, model_data, model_name):
 	genes = ori.columns.tolist()
 	rmses, pccs_all, snrs, mapes = [], [], [], []
 	mrs = []
+	genes_ho = []
+
 	for gene in genes:
 		spots = mask.index[mask.loc[:, gene] == 1].tolist()
+		if len(spots) == 0:
+			continue
+		genes_ho.append(gene)
 		mr = (ho.loc[:, gene] == 0).sum()/float(ho.shape[0])
 		mrs.append(mr)
 		tru = ori.loc[spots, gene].to_numpy()
 		imp = model_data.loc[spots, gene].to_numpy()
 		rmses.append(np.sqrt(np.mean(np.square(imp-tru))))
-		pccs_all.append(pearsonr(ori.loc[spot,:].to_numpy(),
-							model_data.loc[spot,:].to_numpy()))
+		pccs_all.append(pearsonr(ori.loc[:,gene].to_numpy(),
+							model_data.loc[:, gene].to_numpy()))
 		snrs.append(np.log2((np.sum(imp) +1) /
 			(1+np.sum(np.absolute(tru-imp)))))
 		mapes.append(np.mean(np.divide(np.absolute(imp - tru), tru)))
 
-	gene_perf = pd.DataFrame({"gene": genes,
+	gene_perf = pd.DataFrame({"gene": genes_ho,
 								"rmse":rmses,
 								"pcc": pccs_all,
 								"snr": snrs,
@@ -88,7 +99,7 @@ def evalAll(data_folder, model_names):
 		genes = mask.columns.tolist()
 		ho = pd.read_csv("%s/ho_data_%d.csv" %(data_folder, seed), index_col=0)
 		ho = ho.loc[mask.index, genes]
-		ori, meta = utils.read_ST_data("%s/norm.csv" %data_folder)
+		ori, meta = utils.read_ST_data("%s/CPM_filtered.csv" %data_folder)
 		ori = ori.loc[mask.index, genes]
 
 		for model_name in model_names:
@@ -116,7 +127,7 @@ def main(data_folder):
 	perf_folder = os.path.join(data_folder, "performance")
 	if not os.path.exists(perf_folder):
 		os.mkdir(perf_folder)
-	model_names = ["spImpute", "mcImpute","MAGIC", "SAVER", "spKNN", "knnSmooth"]
+	model_names = ["spImpute", "mcimpute","MAGIC", "kNNsp", "knnSmoothing"]
 	## get performance
 	slidePerf, spotPerf, genePerf = evalAll(data_folder, model_names)
 	## save performance

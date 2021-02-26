@@ -20,6 +20,6 @@ if __name__ == '__main__':
 			out_fn = os.path.join(folder, "%s_%d.csv" %(imputer_name, i))
 			imputer = Imputer(imputer_name, data)
 			imputed_data = imputer.fit_transform()
-			imputed_data.to_csv(os.path.join(folder, out_fn))
+			imputed_data.to_csv(out_fn)
 			print("[%d, %s] imputed %s." %(i, imputer_name, fn))
 

@@ -99,7 +99,7 @@ def evalAll(data_folder, model_names):
 		genes = mask.columns.tolist()
 		ho = pd.read_csv("%s/ho_data_%d.csv" %(data_folder, seed), index_col=0)
 		ho = ho.loc[mask.index, genes]
-		ori, meta = utils.read_ST_data("%s/CPM_filtered.csv" %data_folder)
+		ori, meta = utils.read_ST_data("%s/norm.csv" %data_folder)
 		ori = ori.loc[mask.index, genes]
 
 		for model_name in model_names:
@@ -127,7 +127,7 @@ def main(data_folder):
 	perf_folder = os.path.join(data_folder, "performance")
 	if not os.path.exists(perf_folder):
 		os.mkdir(perf_folder)
-	model_names = ["spImpute", "mcimpute","MAGIC", "kNNsp", "knnSmoothing"]
+	model_names = ["spImpute", "mcImpute","MAGIC", "spKNN", "knnSmooth"]
 	## get performance
 	slidePerf, spotPerf, genePerf = evalAll(data_folder, model_names)
 	## save performance

@@ -20,5 +20,3 @@ class Data(object):
 
 	def update_ep(self, ep):
 		self.epsilon=ep
-
-		

@@ -6,21 +6,20 @@ import sys
 sys.path.append("../src/")
 import utils
 from time import time
-from os.path import exists
+from os.path import exists, join
 from os import mkdir
 
-def generate_cv_masks(original_data, genes):
+def generate_cv_masks(original_data):
 	np.random.seed(2021)
 	# make a dumb hold out mask data
 	ho_mask = pd.DataFrame(columns = original_data.columns,
-								index = original_data.index,
-								data = np.zeros(original_data.shape))
+					index = original_data.index,
+					data = np.zeros(original_data.shape))
 	# make templates for masks and ho data for 5 fold cross validation
 	ho_masks = [ho_mask.copy() for i in range(5)]
 	ho_dsets = [original_data.copy() for i in range(5)]
-
 	# for each gene, crosss validate
-	for gene in genes:
+	for gene in original_data.columns.tolist():
 		nonzero_spots = original_data.index[original_data[gene] > 0].tolist()
 		np.random.shuffle(nonzero_spots)
 		nspots = len(nonzero_spots)
@@ -35,25 +34,21 @@ def generate_cv_masks(original_data, genes):
 	return ho_dsets, ho_masks
 
 def main(data_folder, filt=0.5, read_mask='no'):
-	if read_mask == 'yes':
-		original_data, meta_data = utils.read_ST_data(data_folder + "/norm.csv")
-		ho_mask = pd.read_csv(data_folder + "/ho_data_%d.csv" %seed, index_col=0)
-		ho_data = pd.read_csv(data_folder + "/ho_data_%d.csv" %seed, index_col=0)
-	else:
-		data_fn = data_folder + "/raw.csv"
-		original_data, meta_data = utils.read_ST_data(data_fn)
-		genes = utils.filterGene_sparsity(original_data,filt).columns.tolist()
-		print(len(genes))
-		if not exists(data_folder + "/norm.csv"):
-			original_data =  utils.data_norm(original_data,method="median")
-			original_data.to_csv(data_folder + "/norm.csv")
-		# generate 5 fold cross validation datasets
-		ho_dsets, ho_masks = generate_cv_masks(original_data, genes)
-		for fd in range(5):
-			ho_data, ho_mask = ho_dsets[fd], ho_masks[fd]
-			ho_data.to_csv(data_folder + "/ho_data_%d.csv" %fd)
-			ho_mask.to_csv(data_folder + "/ho_mask_%d.csv" %fd)
+	norm_fn = join(data_folder, "norm.csv")
+	raw_fn = join(data_folder, "raw.csv")
+	original_data, meta_data = utils.read_ST_data(raw_fn)
+	original_data = utils.filterGene_sparsity(original_data,filt)
+	original_data =  utils.data_norm(original_data,method="cpm")
+	original_data.to_csv(data_folder + "/norm.csv")
 
+	print("Data normed and filtered: %s spots, %s genes." %(original_data.shape[0], original_data.shape[1]))
+	# generate 5 fold cross validation datasets
+	ho_dsets, ho_masks = generate_cv_masks(original_data)
+	for fd in range(5):
+		ho_data, ho_mask = ho_dsets[fd], ho_masks[fd]
+		ho_data.to_csv(data_folder + "/ho_data_%d.csv" %fd)
+		ho_mask.to_csv(data_folder + "/ho_mask_%d.csv" %fd)
+		print("[Fold %d] Hold out data generated." %fd)
 
 if __name__ == "__main__":
 	folder = sys.argv[1]

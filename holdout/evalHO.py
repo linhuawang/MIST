@@ -9,7 +9,8 @@ import sys
 sys.path.append("../src/")
 import utils
 from utils import gene_density
-
+from  tqdm import trange
+from time import time
 ## Evaluate spot level performance for holdout test
 def evalSpot(ori, mask, meta, model_data, model_name):
 	spots = ori.index.tolist()
@@ -17,7 +18,8 @@ def evalSpot(ori, mask, meta, model_data, model_name):
 	rmses, pccs_all, snrs, mapes = [], [], [], []
 	spots_ho = []
 
-	for spot in spots:
+	for i in trange(len(spots)):
+		spot = spots[i]
 		genes = mask.columns[mask.loc[spot,:] == 1].tolist()
 		if len(genes) == 0:
 			continue
@@ -25,8 +27,7 @@ def evalSpot(ori, mask, meta, model_data, model_name):
 		tru = ori.loc[spot, genes].to_numpy()
 		imp = model_data.loc[spot, genes].to_numpy()
 		rmses.append(np.sqrt(np.mean(np.square(imp - tru))))
-		pccs_all.append(pearsonr(ori.loc[spot,:].to_numpy(),
-							model_data.loc[spot,:].to_numpy()))
+		pccs_all.append(pearsonr(imp, tru)[0])
 		snrs.append(np.log2((np.sum(imp) +1) /
 			(1+np.sum(np.absolute(tru-imp)))))
 		mapes.append(np.mean(np.divide(np.absolute(imp - tru), tru)))
@@ -47,7 +48,8 @@ def evalGene(ori, mask, ho, meta, model_data, model_name):
 	mrs = []
 	genes_ho = []
 
-	for gene in genes:
+	for i in trange(len(genes)):
+		gene = genes[i]
 		spots = mask.index[mask.loc[:, gene] == 1].tolist()
 		if len(spots) == 0:
 			continue
@@ -57,19 +59,18 @@ def evalGene(ori, mask, ho, meta, model_data, model_name):
 		tru = ori.loc[spots, gene].to_numpy()
 		imp = model_data.loc[spots, gene].to_numpy()
 		rmses.append(np.sqrt(np.mean(np.square(imp-tru))))
-		pccs_all.append(pearsonr(ori.loc[:,gene].to_numpy(),
-							model_data.loc[:, gene].to_numpy()))
+		pccs_all.append(pearsonr(imp,tru)[0])
 		snrs.append(np.log2((np.sum(imp) +1) /
 			(1+np.sum(np.absolute(tru-imp)))))
 		mapes.append(np.mean(np.divide(np.absolute(imp - tru), tru)))
 
 	gene_perf = pd.DataFrame({"gene": genes_ho,
-								"rmse":rmses,
-								"pcc": pccs_all,
-								"snr": snrs,
-								"mape":mapes,
-								"model":model_name,
-								"mr": mrs})
+				"rmse":rmses,
+				"pcc": pccs_all,
+				"snr": snrs,
+				"mape":mapes,
+				"model":model_name,
+				"mr": mrs})
 	return gene_perf
 
 ## Evaluate slide level performance for holdout test
@@ -85,7 +86,7 @@ def evalSlide(ori, mask, ho, model_data, model_name):
 	MR1 = float((ho == 0).sum().sum()) / np.prod(ho.shape)
 	MR2 = float((model_data == 0).sum().sum()) / np.prod(model_data.shape)
 	perf_df = pd.DataFrame(data=[[rmse, mape, snr, pcc, model_name, MR1, MR2, MR1-MR2]],
-						  columns= ['RMSE', 'MAPE', 'SNR', 'PCC', 'ModelName', 'hoMR', 'impMR', 'redMR'])
+			 columns= ['RMSE', 'MAPE', 'SNR', 'PCC', 'ModelName', 'hoMR', 'impMR', 'redMR'])
 	return perf_df
 
 ## Function to evaluate all models for one dataset
@@ -94,21 +95,33 @@ def evalAll(data_folder, model_names):
 	model_perf_dfs = []
 	spot_perf_dfs = []
 	gene_perf_dfs = []
-	for seed in range(5):
+	for seed in range(4):
+		st = time()
 		mask = pd.read_csv("%s/ho_mask_%d.csv" %(data_folder, seed), index_col=0)
 		genes = mask.columns.tolist()
 		ho = pd.read_csv("%s/ho_data_%d.csv" %(data_folder, seed), index_col=0)
 		ho = ho.loc[mask.index, genes]
 		ori, meta = utils.read_ST_data("%s/norm.csv" %data_folder)
+		t1 = time()
+		print("[Fold %d] Ground truth data loading elapsed %.1f seconds." %(seed, t1 - st))
 		ori = ori.loc[mask.index, genes]
 
 		for model_name in model_names:
+			t2 = time()
 			fn = "%s/%s_%d.csv" %(data_folder, model_name, seed)
 			model_data = pd.read_csv(fn, index_col=0)
 			model_data.columns = ori.columns
+			t3 = time()
+			print("[Fold %d, %s] Model data loading elapsed %.1f seconds." %(seed, model_name, t3-t2))
 			model_perf_df = evalSlide(ori, mask, ho, model_data, model_name)
+			t4 = time()
+			print("[Fold %d, %s] Slide-level performance evaluation elapsed %.1f seconds." %(seed, model_name, t4-t3))
 			spot_perf_df = evalSpot(ori, mask, meta, model_data, model_name)
+			t5 = time()
+			print("[Fold %d, %s] Spot-level  performance evaluation elapsed %.1f seconds." %(seed, model_name, t5-t4))
 			gene_perf_df = evalGene(ori, mask, ho,  meta, model_data, model_name)
+			t6 = time()
+			print("[Fold %d, %s] Gene-level  performance evaluation elapsed %.1f seconds." %(seed, model_name, t6-t5))
 			model_perf_df['cvFold'] = seed
 			model_perf_dfs.append(model_perf_df)
 			spot_perf_df['cvFold'] = seed

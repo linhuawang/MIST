@@ -17,8 +17,7 @@ if __name__ == '__main__':
 	for i in range(5):
 		fn = os.path.join(folder, "ho_data_%d.csv" %i)
 		data = Data(fn, radius=radius, merge=merge)
-		#for imputer_name in ["MAGIC", "knnSmooth", "mcImpute", "spKNN", "spImpute"]:
-		for imputer_name in [ "mcImpute", "spImpute"]:
+		for imputer_name in ["MAGIC", "knnSmooth", "mcImpute", "spKNN", "spImpute"]:
 			out_fn = os.path.join(folder, "%s_%d.csv" %(imputer_name, i))
 			st_time = time()
 			imputer = Imputer(imputer_name, data)

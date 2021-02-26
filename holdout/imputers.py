@@ -44,8 +44,8 @@ def mcImpute(data):
 
 def spKNN(data, nodes):
 	## construct graph
-	nb_df = pd.DataFrame(index=data.index, columns=data.index, 
-							data=np.zeros((data.shape[0], data.shape[0])))
+	nb_df = pd.DataFrame(index=data.index, columns=data.index,
+				data=np.zeros((data.shape[0], data.shape[0])))
 	for node in nodes:
 		spot = node.name
 		nbs = [nb.name for nb in node.neighbors]

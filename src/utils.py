@@ -5,7 +5,6 @@ import sys
 from glob import glob
 from multiprocessing import Pool
 from time import time as TIME
-#from logCPM import logCPM
 import argparse
 from statsmodels.distributions.empirical_distribution import ECDF
 import math
@@ -69,38 +68,6 @@ def spot_euc2_aff(slide_meta):
             aff_mat[i,:] = affs
     aff_df = pd.DataFrame(data=aff_mat, columns = sample_ids, index= sample_ids)
     return aff_df
-
-def spotPerformance(ori, mask, meta, model_data, model_name):
-    spots = ori.index.tolist()
-    meta = meta.loc[spots,:]
-    rmses = []
-    for spot in spots:
-        genes = mask.columns[mask.loc[spot,:] == 1].tolist()
-        tru = ori.loc[spot, genes].to_numpy()
-        imp = model_data.loc[spot, genes].to_numpy()
-        rmse = np.sqrt(np.mean(np.square(imp - tru)))
-        rmses.append(rmse)
-    spot_perf = pd.DataFrame({"x":meta.iloc[:,0],
-                                "y":meta.iloc[:,1],
-                                "rmse":rmses,
-                                "model":model_name})
-    return spot_perf
-
-def wholeSlidePerformance(ori, mask, ho, model_data, model_name):
-    M = np.ravel(mask)
-    inds = np.where(M)
-    tru = np.ravel(ori.values)[inds]
-    imp = np.ravel(model_data.values)[inds]
-    snr = np.log2(np.sum(imp) / np.sum(np.absolute(tru-imp)))
-    rmse = np.sqrt(np.mean(np.square(imp - tru)))
-    mape = np.mean(np.divide(np.absolute(imp - tru), tru))
-    pcc = pearsonr(tru, imp)[0]
-    MR1 = float((ho == 0).sum().sum()) / np.prod(ho.shape)
-    MR2 = float((model_data == 0).sum().sum()) / np.prod(model_data.shape)
-    perf_df = pd.DataFrame(data=[[rmse, mape, snr, pcc, model_name, MR1, MR2, MR1-MR2]],
-                          columns= ['RMSE', 'MAPE', 'SNR', 'PCC', 'ModelName', 'hoMR', 'impMR', 'redMR'])
-    return perf_df
-
 
 def spot_density(count_matrix):
     densities = np.array([])

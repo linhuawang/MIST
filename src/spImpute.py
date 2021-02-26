@@ -18,7 +18,7 @@ from tqdm import tqdm, trange
 import utils
 import Data
 
-def spImpute(data_obj): # multiprocessing not implemented yet
+def spImpute(data_obj, nExperts=10): # multiprocessing not implemented yet
 	start_time = time()
 	data = data_obj.count
 	meta = data_obj.meta
@@ -26,18 +26,16 @@ def spImpute(data_obj): # multiprocessing not implemented yet
 	radius = data_obj.radius
 	nodes = data_obj.nodes
 	merge = data_obj.merge
-	cor_mat = spot_PCA_sims(data)
+	cor_mat = data_obj.cormat
 	#nodes = construct_graph(meta, radius)
 	ccs = spatialCCs(nodes, cor_mat, epsilon, merge)
 	cc_time = time()
 	print("%d connected components detected in %.1f seconds."\
 	 				%(len(ccs), cc_time - start_time))
-
 	f = plot_ccs(ccs, meta, "epsilon = %.2f" %epsilon)
 	spots = data.index.tolist()
 	known_idx = np.where(data.values)
 	imputed = data.copy()
-	nExperts = 10
 	for i1 in range(len(ccs)):
 		cc = ccs[i1]
 		cc_spots = [c.name for c in cc]
@@ -57,37 +55,7 @@ def spImpute(data_obj): # multiprocessing not implemented yet
 
 	assert np.all(data.values[known_idx] > 0)
 	imputed.values[known_idx] = data.values[known_idx]
-	#end_time = time()
-	#print("Imptuation finished in %.2f seconds." %(end_time - start_time))
 	return imputed, f
-
-def spImpute_with_corMat(data, meta, cor_mat, epislon=0.6): # multiprocessing not implemented yet
-	#start_time = time()
-	nodes = construct_graph(meta)
-	ccs = spatialCCs(nodes, cor_mat, epislon)
-	spots = data.index.tolist()
-	known_idx = np.where(data.values)
-	imputed = data.copy()
-	nExperts = 5
-	for i1 in range(len(ccs)):
-		cc = ccs[i1]
-		cc_spots = [c.name for c in cc]
-		other_spots = [s for s in spots if s not in cc_spots]
-		m = len(cc_spots)
-		s = int(len(other_spots) / 10)
-		values = np.zeros(shape=(m, data.shape[1], nExperts))
-
-		for i2 in range(nExperts):
-			np.random.seed(i2)
-			sampled_spot = list(np.random.choice(other_spots, s, replace=False))
-			ri_spots = cc_spots + sampled_spot
-			ri_impute = rankMinImpute(data.loc[ri_spots,:])
-			values[:,:,i2] = ri_impute.values[:m, :]
-		imputed.loc[cc_spots,:] = np.mean(values, axis=2)
-
-	assert np.all(data.values[known_idx] > 0)
-	imputed.values[known_idx] = data.values[known_idx]
-	return imputed
 
 
 def rankMinImpute(data):
@@ -137,30 +105,6 @@ def rankMinImpute(data):
 def softThreshold(s, l):
 	return np.multiply(np.sign(s), np.absolute(s - l))
 
-def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold):
-	pre_eps = np.arange(0.2, 1.0, 0.1)
-	eps = []
-	nodes = construct_graph(meta_data)
-	cc_lens = []
-	for ep in np.flip(pre_eps):
-		ccs = spatialCCs(nodes, cor_mat, ep)
-		if len(ccs) in cc_lens:
-			pass
-		else:
-			cc_lens.append(len(ccs))
-			eps.append(ep)
-
-	print("Start evaluating epsilon...")
-	perf_dfs = []
-	for ep in eps:
-		im = np.log2(spImpute_with_corMat(ho_data, meta_data, cor_mat, ep) + 1)
-		perf_df = utils.wholeSlidePerformance(np.log2(ori_data + 1), ho_mask, np.log2(ho_data + 1), im, ep)
-		perf_dfs.append(perf_df)
-	perf_dfs = pd.concat(perf_dfs)
-	perf_dfs = perf_dfs.sort_values("PCC")
-	perf_dfs["cv_fold"] = cv_fold
-	return perf_dfs
-
 
 def generate_cv_masks(original_data, k=2):
 	np.random.seed(2021)
@@ -186,9 +130,23 @@ def generate_cv_masks(original_data, k=2):
 			ho_dsets[i].loc[spot_sampled, gene] = 0
 	return ho_dsets, ho_masks
 
-def select_ep(original_data, meta_data, k=2):
+def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold):
+	eps = np.arange(0.2, 0.9, 0.1)
+	ho_data_obj = Data.Data(count=ho_data, meta=meta_data, cormat=cor_mat)
+	print("Start evaluating epsilon...")
+	perf_dfs = []
+	for ep in eps:
+		ho_data_obj.update_ep(ep)
+		model_data = spImpute(ho_data_obj, nExperts=5)
+		perf_df = utils.evalSlide(np.log2(ori_data + 1), ho_mask, np.log2(ho_data + 1), model_data, ep)
+		perf_dfs.append(perf_df)
+	perf_dfs = pd.concat(perf_dfs)
+	perf_dfs = perf_dfs.sort_values("PCC")
+	perf_dfs["cv_fold"] = cv_fold
+	return perf_dfs
+
+def select_ep(original_data, meta_data, cor_mat, k=2):
 	start_time = time()
-	cor_mat = spot_PCA_sims(original_data)
 	print(original_data.shape)
 	training_data = utils.filterGene_sparsity(original_data,0.8)
 	print(training_data.shape)
@@ -203,8 +161,8 @@ def select_ep(original_data, meta_data, k=2):
 	print(perf_dfs)
 	PCC_dfs = perf_dfs.loc[:, ["ModelName", "PCC"]]
 	median_pcc_dfs = PCC_dfs.groupby("ModelName").median()
-	median_pcc_dfs['epislon'] = median_pcc_dfs.index.to_numpy()
-	ep = median_pcc_dfs.loc[median_pcc_dfs.PCC == median_pcc_dfs.PCC.max(),"epislon"].tolist()[0]
+	median_pcc_dfs['epsilon'] = median_pcc_dfs.index.to_numpy()
+	ep = median_pcc_dfs.loc[median_pcc_dfs.PCC == median_pcc_dfs.PCC.max(),"epsilon"].tolist()[0]
 	print(ep)
 	end_time = time()
 	print("Epislon %.2f is selected in %.1f seconds." %(ep, end_time - start_time))
@@ -236,11 +194,10 @@ if __name__ == "__main__":
 	radius = args.radius
 	merge = args.merge
 
-	data = Data.Data(count_fn, radius, merge, norm)
-
+	data = Data.Data(countpath=count_fn,radius=radius,merge=merge,norm=norm)
 
 	if select == 1: # takes hours even with multiprocessing
-		ep = select_ep(data.count, data.meta, k=2)
+		ep = select_ep(data.count, data.meta, data.cormat)
 	else:
 		ep = epi
 

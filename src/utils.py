@@ -14,6 +14,22 @@ from matplotlib import pyplot as plt
 from scipy.stats import percentileofscore as percentile
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+from Data import Data
+
+def evalSlide(ori, mask, ho, model_data, model_name):
+    M = np.ravel(mask)
+    inds = np.where(M)
+    tru = np.ravel(ori.values)[inds]
+    imp = np.ravel(model_data.values)[inds]
+    snr = np.log2(np.sum(imp) / np.sum(np.absolute(tru-imp)))
+    rmse = np.sqrt(np.mean(np.square(imp - tru)))
+    mape = np.mean(np.divide(np.absolute(imp - tru), tru))
+    pcc = pearsonr(tru, imp)[0]
+    MR1 = float((ho == 0).sum().sum()) / np.prod(ho.shape)
+    MR2 = float((model_data == 0).sum().sum()) / np.prod(model_data.shape)
+    perf_df = pd.DataFrame(data=[[rmse, mape, snr, pcc, model_name, MR1, MR2, MR1-MR2]],
+             columns= ['RMSE', 'MAPE', 'SNR', 'PCC', 'ModelName', 'hoMR', 'impMR', 'redMR'])
+    return perf_df
 
 def data_norm(data, method='median'):
     assert method in ['median', 'cpm', 'logCPM']

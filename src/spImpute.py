@@ -147,9 +147,7 @@ def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold):
 
 def select_ep(original_data, meta_data, cor_mat, k=2):
 	start_time = time()
-	print(original_data.shape)
 	training_data = utils.filterGene_sparsity(original_data,0.8)
-	print(training_data.shape)
 	# generate k fold cross validation datasets
 	ho_dsets, ho_masks = generate_cv_masks(training_data)
 	perf_dfs = []
@@ -158,15 +156,18 @@ def select_ep(original_data, meta_data, cor_mat, k=2):
 		perf_df = epislon_perf(ho_data, ho_mask, meta_data, training_data, cor_mat, fd)
 		perf_dfs.append(perf_df)
 	perf_dfs = pd.concat(perf_dfs)
-	print(perf_dfs)
 	PCC_dfs = perf_dfs.loc[:, ["ModelName", "PCC"]]
 	median_pcc_dfs = PCC_dfs.groupby("ModelName").median()
 	median_pcc_dfs['epsilon'] = median_pcc_dfs.index.to_numpy()
 	ep = median_pcc_dfs.loc[median_pcc_dfs.PCC == median_pcc_dfs.PCC.max(),"epsilon"].tolist()[0]
-	print(ep)
 	end_time = time()
 	print("Epislon %.2f is selected in %.1f seconds." %(ep, end_time - start_time))
 	return ep
+
+def main(data):
+	ep = select_ep(data.count, data.meta, data.cormat)
+	data.update_ep(ep)
+	return spImpute(data)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Algorithm variables.')
@@ -195,16 +196,13 @@ if __name__ == "__main__":
 	merge = args.merge
 
 	data = Data.Data(countpath=count_fn,radius=radius,merge=merge,norm=norm)
-
-	if select == 1: # takes hours even with multiprocessing
-		ep = select_ep(data.count, data.meta, data.cormat)
-	else:
-		ep = epi
-
-	data.update_ep(ep)
-
-	imputed, figure = spImpute(data)
-
+	imputed, figure = main(data)
+	# if select == 1: # takes hours even with multiprocessing
+	# 	ep = select_ep(data.count, data.meta, data.cormat)
+	# else:
+	# 	ep = epi
+	# data.update_ep(ep)
+	#imputed, figure = spImpute(data)
 	if out_fn != "none":
 		imputed.to_csv(out_fn)
 		fig_out = out_fn.split(".csv")[0] + ".png"

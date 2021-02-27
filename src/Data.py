@@ -2,6 +2,7 @@
 #from utils import read_ST_data, data_norm, spot_PCA_sims
 import neighbors
 import utils
+import pandas as pd
 
 class Data(object):
 	"""docstring for Data"""
@@ -15,16 +16,18 @@ class Data(object):
 			count, meta = utils.read_ST_data(self.filename)
 			count.fillna(0, inplace=True)
 		else:
-			assert (count != None) and (meta != None)
-		self.count = count
-		self.meta = meta
-		# add spot affinity
+			assert isinstance(count, pd.DataFrame) and isinstance(meta, pd.DataFrame)
+
 		if self.norm != "none":
 			count = utils.data_norm(count, method=self.norm)
-		if cormat:
+		self.count = count
+		self.meta = meta
+
+		if isinstance(cormat, pd.DataFrame):
 			self.cormat = cormat
 		else:
 			self.cormat = utils.spot_PCA_sims(self.count)
+
 		# add other features
 		self.radius = radius
 		self.nodes = neighbors.construct_graph(self.meta, self.radius)

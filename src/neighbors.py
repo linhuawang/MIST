@@ -157,6 +157,7 @@ def plot_ccs(ccs, meta, title="none"):
 	plt.gca().invert_yaxis()
 	if title != "none":
 		plt.title(title)
+	plt.close()
 	return f
 
 # input count matrix should be log scaled

@@ -5,7 +5,7 @@ sys.path.append("../src/")
 #from spImpute import rankMinImpute
 import spImpute
 import neighbors
-from Data import Data
+import Data
 import numpy as np
 import pandas as pd
 ## data: n samples by p features
@@ -14,7 +14,7 @@ class Imputer(object):
 	"""docstring for Imputer"""
 	def __init__(self, name, data):
 		assert name in ["MAGIC", "knnSmooth", "mcImpute", "spKNN", "spImpute"]
-		assert isinstance(data, Data)
+		assert isinstance(data, Data.Data)
 		self.name = name
 		self.data = data
 

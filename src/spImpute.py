@@ -49,7 +49,7 @@ def spImpute(data_obj, nExperts=10): # multiprocessing not implemented yet
 			ri_spots = cc_spots + sampled_spot
 			ri_impute = rankMinImpute(data.loc[ri_spots,:])
 			values[:,:,i2] = ri_impute.values[:m, :]
-			print("Outer: %d/%d, inner: %d/%d" %(i1, len(ccs), i2, nExperts))
+			print("[%.1f] Outer: %d/%d, inner: %d/%d" %(epsilon, i1, len(ccs), i2, nExperts))
 
 		imputed.loc[cc_spots,:] = np.mean(values, axis=2)
 
@@ -137,7 +137,7 @@ def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold):
 	perf_dfs = []
 	for ep in eps:
 		ho_data_obj.update_ep(ep)
-		model_data = spImpute(ho_data_obj, nExperts=5)
+		model_data,_ = spImpute(ho_data_obj, nExperts=5)
 		perf_df = utils.evalSlide(np.log2(ori_data + 1), ho_mask, np.log2(ho_data + 1), model_data, ep)
 		perf_dfs.append(perf_df)
 	perf_dfs = pd.concat(perf_dfs)
@@ -147,7 +147,13 @@ def epislon_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold):
 
 def select_ep(original_data, meta_data, cor_mat, k=2):
 	start_time = time()
+	thre = 0.8
 	training_data = utils.filterGene_sparsity(original_data,0.8)
+
+	if training_data.empty:
+		print("No landmark genes selected, use 0.6 as default")
+		return 0.6
+
 	# generate k fold cross validation datasets
 	ho_dsets, ho_masks = generate_cv_masks(training_data)
 	perf_dfs = []
@@ -165,7 +171,11 @@ def select_ep(original_data, meta_data, cor_mat, k=2):
 	return ep
 
 def main(data):
-	ep = select_ep(data.count, data.meta, data.cormat)
+	count = data.count.copy()
+	meta = data.meta.copy()
+	cormat = data.cormat.copy()
+
+	ep = select_ep(count, meta, cormat)
 	data.update_ep(ep)
 	return spImpute(data)
 

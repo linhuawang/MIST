@@ -6180,3 +6180,43 @@ No landmark genes selected, use 0.6 as default
 [0.6] Outer: 10/11, inner: 8/10
 [0.6] Outer: 10/11, inner: 9/10
 [4, spImpute] elapsed 1143.9 seconds..
+Traceback (most recent call last):
+  File "holdout_experiments.py", line 20, in <module>
+    data = Data.Data(countpath=fn, radius=radius, merge=merge)
+  File "../src/Data.py", line 16, in __init__
+    count, meta = utils.read_ST_data(self.filename)
+  File "../src/utils.py", line 124, in read_ST_data
+    data = pd.read_csv(count_fn, sep=",", index_col=0)
+  File "/home/alexw/.local/lib/python3.6/site-packages/pandas/io/parsers.py", line 686, in read_csv
+    return _read(filepath_or_buffer, kwds)
+  File "/home/alexw/.local/lib/python3.6/site-packages/pandas/io/parsers.py", line 452, in _read
+    parser = TextFileReader(fp_or_buf, **kwds)
+  File "/home/alexw/.local/lib/python3.6/site-packages/pandas/io/parsers.py", line 936, in __init__
+    self._make_engine(self.engine)
+  File "/home/alexw/.local/lib/python3.6/site-packages/pandas/io/parsers.py", line 1168, in _make_engine
+    self._engine = CParserWrapper(self.f, **self.options)
+  File "/home/alexw/.local/lib/python3.6/site-packages/pandas/io/parsers.py", line 1998, in __init__
+    self._reader = parsers.TextReader(src, **kwds)
+  File "pandas/_libs/parsers.pyx", line 382, in pandas._libs.parsers.TextReader.__cinit__
+  File "pandas/_libs/parsers.pyx", line 674, in pandas._libs.parsers.TextReader._setup_parser_source
+FileNotFoundError: [Errno 2] No such file or directory: '../../data/holdout_test/logMedian/MouseAD/ho_data_0.csv'
+Traceback (most recent call last):
+  File "holdout_experiments.py", line 20, in <module>
+    data = Data.Data(countpath=fn, radius=radius, merge=merge)
+  File "../src/Data.py", line 16, in __init__
+    count, meta = utils.read_ST_data(self.filename)
+  File "../src/utils.py", line 124, in read_ST_data
+    data = pd.read_csv(count_fn, sep=",", index_col=0)
+  File "/home/alexw/.local/lib/python3.6/site-packages/pandas/io/parsers.py", line 686, in read_csv
+    return _read(filepath_or_buffer, kwds)
+  File "/home/alexw/.local/lib/python3.6/site-packages/pandas/io/parsers.py", line 452, in _read
+    parser = TextFileReader(fp_or_buf, **kwds)
+  File "/home/alexw/.local/lib/python3.6/site-packages/pandas/io/parsers.py", line 936, in __init__
+    self._make_engine(self.engine)
+  File "/home/alexw/.local/lib/python3.6/site-packages/pandas/io/parsers.py", line 1168, in _make_engine
+    self._engine = CParserWrapper(self.f, **self.options)
+  File "/home/alexw/.local/lib/python3.6/site-packages/pandas/io/parsers.py", line 1998, in __init__
+    self._reader = parsers.TextReader(src, **kwds)
+  File "pandas/_libs/parsers.pyx", line 382, in pandas._libs.parsers.TextReader.__cinit__
+  File "pandas/_libs/parsers.pyx", line 674, in pandas._libs.parsers.TextReader._setup_parser_source
+FileNotFoundError: [Errno 2] No such file or directory: '../../data/holdout_test/logMedian/Melanoma1/ho_data_0.csv'

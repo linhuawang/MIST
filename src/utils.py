@@ -31,15 +31,16 @@ def evalSlide(ori, mask, ho, model_data, model_name):
              columns= ['RMSE', 'MAPE', 'SNR', 'PCC', 'ModelName', 'hoMR', 'impMR', 'redMR'])
     return perf_df
 
-def data_norm(data, method='median'):
-    assert method in ['median', 'cpm', 'logCPM']
+def data_norm(data, method='cpm'):
+    assert method in ['median', 'cpm', 'logCPM', 'logMed']
+    med_libSize =  data.sum(axis=1).median()
     if method == "median":
-        med_libSize =  data.sum(axis=1).median()
         data = data.apply(lambda x: x * med_libSize/ x.sum() , axis=1)
+    elif method == "logMed":
+        data = np.log2(1 + data.apply(lambda x: x * med_libSize/ x.sum() , axis=1))
     elif method == "logCPM":
-        data = data + 1
         data = data.apply(lambda x: x * (10 ** 6)/ x.sum() , axis=1)
-        data = np.log2(data)
+        data = np.log2(data+1)
     else:
         data = data.apply(lambda x: x * (10 ** 6)/ x.sum() , axis=1)
     return data

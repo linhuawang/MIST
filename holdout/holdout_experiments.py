@@ -7,7 +7,7 @@ import Data
 
 if __name__ == '__main__':
 	folder = sys.argv[1]
-	ep = 0.6
+	ep = 0.7
 	merge = 5
 	radius = 2
 

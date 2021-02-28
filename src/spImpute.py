@@ -151,8 +151,8 @@ def select_ep(original_data, meta_data, cor_mat, k=2):
 	training_data = utils.filterGene_sparsity(original_data,0.8)
 
 	if training_data.empty:
-		print("No landmark genes selected, use 0.6 as default")
-		return 0.6
+		print("No landmark genes selected, use 0.7 as default")
+		return 0.7
 
 	# generate k fold cross validation datasets
 	ho_dsets, ho_masks = generate_cv_masks(training_data)

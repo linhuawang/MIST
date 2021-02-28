@@ -11,7 +11,7 @@ import utils
 from utils import gene_density
 from  tqdm import trange
 from time import time
-## Evaluate spot level performance for holdout test
+## Evaluate spot level performance for holdout test at log2 scale
 def evalSpot(ori, mask, meta, model_data, model_name):
 	spots = ori.index.tolist()
 	meta = meta.loc[spots,:]
@@ -100,25 +100,28 @@ def evalAll(data_folder, model_names):
 		mask = pd.read_csv("%s/ho_mask_%d.csv" %(data_folder, seed), index_col=0)
 		genes = mask.columns.tolist()
 		ho = pd.read_csv("%s/ho_data_%d.csv" %(data_folder, seed), index_col=0)
-		ho = np.log2(ho.loc[mask.index, genes] + 1)
+		ho = ho.loc[mask.index, genes] 
 		ori, meta = utils.read_ST_data("%s/norm.csv" %data_folder)
 		t1 = time()
 		print("[Fold %d] Ground truth data loading elapsed %.1f seconds." %(seed, t1 - st))
 		ori = ori.loc[mask.index, genes]
-		ori = np.log2(ori + 1)
+#		ori = np.log2(ori + 1) #CPM to logCPM
 		for model_name in model_names:
 			t2 = time()
 			fn = "%s/%s_%d.csv" %(data_folder, model_name, seed)
 			model_data = pd.read_csv(fn, index_col=0)
 			model_data = model_data.loc[ori.index, genes]
-			model_data = np.log2(model_data + 1)
-#			model_data.columns = ori.columns
+#			model_data = np.log2(model_data + 1)
+
 			t3 = time()
 			print("[Fold %d, %s] Model data loading elapsed %.1f seconds." %(seed, model_name, t3-t2))
 			model_perf_df = evalSlide(ori, mask, ho, model_data, model_name)
 			t4 = time()
 			print("[Fold %d, %s] Slide-level performance evaluation elapsed %.1f seconds." %(seed, model_name, t4-t3))
-			spot_perf_df = evalSpot(ori, mask, meta, model_data, model_name)
+			try:
+				spot_perf_df = evalSpot(ori, mask, meta, model_data, model_name)
+			except:
+				spot_perf_df = model_perf_df
 			t5 = time()
 			print("[Fold %d, %s] Spot-level  performance evaluation elapsed %.1f seconds." %(seed, model_name, t5-t4))
 			gene_perf_df = evalGene(ori, mask, ho,  meta, model_data, model_name)

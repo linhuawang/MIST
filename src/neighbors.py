@@ -68,7 +68,7 @@ def construct_graph(meta_data,radius=2):
 		for node2 in nodes:
 			dist = np.linalg.norm(np.array((node1.x, node1.y)) -
 				np.array((node2.x, node2.y)))
-			if dist < radius:
+			if dist <= radius:
 				node1.add_neighbor(node2)
 				node2.add_neighbor(node1)
 	return nodes

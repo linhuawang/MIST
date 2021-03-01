@@ -25,12 +25,12 @@ if __name__ == '__main__':
 		for imputer_name in ["spImpute", "mcImpute"]:
 			norm_outF = os.path.join(folder, "%s_%d.csv" %(imputer_name, i))
 			raw_outF = os.path.join(folder, "%s_raw_%d.csv" %(imputer_name, i))
-			
+			libsizeF = os.path.join(folder, "libsize.csv")
 			st_time = time()
 			imputer = Imputer(imputer_name, data)
 
 			imputed_data = imputer.fit_transform()
-			imputed_raw = utils.data_denorm(imputed_data, norm)
+			imputed_raw = utils.data_denorm(imputed_data, libsizeF, norm)
 
 			imputed_data.to_csv(norm_outF)
 			imputed_raw.to_csv(raw_outF)

@@ -100,16 +100,16 @@ def evalAll(data_folder, model_names, cvFold=5):
 		st = time()
 		mask = pd.read_csv("%s/ho_mask_%d.csv" %(data_folder, seed), index_col=0)
 		genes = mask.columns.tolist()
-		ho = pd.read_csv("%s/ho_data_%d.csv" %(data_folder, seed), index_col=0)
+		ho = pd.read_csv("%s/ho_data_raw_%d.csv" %(data_folder, seed), index_col=0)
 		ho = ho.loc[mask.index, genes] 
-		ori, meta = utils.read_ST_data("%s/norm.csv" %data_folder)
+		ori, meta = utils.read_ST_data("%s/raw.csv" %data_folder)
 		t1 = time()
 		print("[Fold %d] Ground truth data loading elapsed %.1f seconds." %(seed, t1 - st))
 		ori = ori.loc[mask.index, genes]
 #		ori = np.log2(ori + 1) #CPM to logCPM
 		for model_name in model_names:
 			t2 = time()
-			fn = "%s/%s_%d.csv" %(data_folder, model_name, seed)
+			fn = "%s/%s_raw_%d.csv" %(data_folder, model_name, seed)
 			model_data = pd.read_csv(fn, index_col=0)
 			model_data = model_data.loc[ori.index, genes]
 #			model_data = np.log2(model_data + 1)
@@ -147,9 +147,9 @@ def main(data_folder):
 	if not os.path.exists(perf_folder):
 		os.mkdir(perf_folder)
 	#model_names = ["spImpute", "mcImpute","MAGIC", "spKNN", "knnSmooth"]
-	model_names = ["spImpute","spImpute2","spImpute3"]
+	model_names = ["spImpute","mcImpute"]
 	## get performance
-	slidePerf, spotPerf, genePerf = evalAll(data_folder, model_names, 1)
+	slidePerf, spotPerf, genePerf = evalAll(data_folder, model_names, 2)
 	## save performance
 	slidePerf.to_csv(os.path.join(perf_folder, "slide_level_results.csv"))
 	spotPerf.to_csv(os.path.join(perf_folder, "spot_level_results.csv"))

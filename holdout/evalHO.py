@@ -13,7 +13,8 @@ from  tqdm import trange
 from time import time
 ## Evaluate spot level performance for holdout test at log2 scale
 def evalSpot(ori, mask, meta, model_data, model_name):
-	spots = mask.index[(mask == 1).any(axis=0)]
+	spots = mask.index[(mask == 1).any(axis=1)]
+
 	meta = meta.loc[spots,:]
 	rmses, pccs_all, snrs, mapes = [], [], [], []
 	spots_ho = []
@@ -43,7 +44,7 @@ def evalSpot(ori, mask, meta, model_data, model_name):
 
 ## Evaluate gene level performance for holdout test
 def evalGene(ori, mask, ho, meta, model_data, model_name):
-	genes = mask.columns[(mask == 1).any(axis=1)]
+	genes = mask.columns[(mask == 1).any(axis=0)]
 
 	rmses, pccs_all, snrs, mapes = [], [], [], []
 	mrs = []

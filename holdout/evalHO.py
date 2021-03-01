@@ -100,7 +100,7 @@ def evalAll(data_folder, model_names, cvFold=5):
 		st = time()
 		mask = pd.read_csv("%s/ho_mask_%d.csv" %(data_folder, seed), index_col=0)
 		genes = mask.columns.tolist()
-		ho = pd.read_csv("%s/ho_data_raw_%d.csv" %(data_folder, seed), index_col=0)
+		ho = pd.read_csv("%s/ho_raw_%d.csv" %(data_folder, seed), index_col=0)
 		ho = ho.loc[mask.index, genes] 
 		ori, meta = utils.read_ST_data("%s/raw.csv" %data_folder)
 		t1 = time()

@@ -8,7 +8,7 @@ class Data(object):
 	"""docstring for Data"""
 	# either countpath or (count and meta) have to be provided
 	def __init__(self, count=None, meta=None, cormat=None,
-				 countpath="", radius=2, merge=5, norm="none", epsilon=0.6):
+				 countpath="", radius=2, merge=5, norm="none", epsilon=0.7):
 		self.norm = norm
 		## add count and meta data
 		if countpath != "":

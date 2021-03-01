@@ -13,7 +13,7 @@ from  tqdm import trange
 from time import time
 ## Evaluate spot level performance for holdout test at log2 scale
 def evalSpot(ori, mask, meta, model_data, model_name):
-	spots = ori.index.tolist()
+	spots = mask.index[(mask == 1).any(axis=0)]
 	meta = meta.loc[spots,:]
 	rmses, pccs_all, snrs, mapes = [], [], [], []
 	spots_ho = []
@@ -43,7 +43,8 @@ def evalSpot(ori, mask, meta, model_data, model_name):
 
 ## Evaluate gene level performance for holdout test
 def evalGene(ori, mask, ho, meta, model_data, model_name):
-	genes = ori.columns.tolist()
+	genes = mask.columns[(mask == 1).any(axis=1)]
+
 	rmses, pccs_all, snrs, mapes = [], [], [], []
 	mrs = []
 	genes_ho = []
@@ -90,12 +91,12 @@ def evalSlide(ori, mask, ho, model_data, model_name):
 	return perf_df
 
 ## Function to evaluate all models for one dataset
-def evalAll(data_folder, model_names):
+def evalAll(data_folder, model_names, cvFold=5):
 	# Slide performance
 	model_perf_dfs = []
 	spot_perf_dfs = []
 	gene_perf_dfs = []
-	for seed in range(5):
+	for seed in range(cvFold):
 		st = time()
 		mask = pd.read_csv("%s/ho_mask_%d.csv" %(data_folder, seed), index_col=0)
 		genes = mask.columns.tolist()
@@ -145,9 +146,10 @@ def main(data_folder):
 	perf_folder = os.path.join(data_folder, "performance")
 	if not os.path.exists(perf_folder):
 		os.mkdir(perf_folder)
-	model_names = ["spImpute", "mcImpute","MAGIC", "spKNN", "knnSmooth"]
+	#model_names = ["spImpute", "mcImpute","MAGIC", "spKNN", "knnSmooth"]
+	model_names = ["spImpute","spImpute2","spImpute3"]
 	## get performance
-	slidePerf, spotPerf, genePerf = evalAll(data_folder, model_names)
+	slidePerf, spotPerf, genePerf = evalAll(data_folder, model_names, 1)
 	## save performance
 	slidePerf.to_csv(os.path.join(perf_folder, "slide_level_results.csv"))
 	spotPerf.to_csv(os.path.join(perf_folder, "spot_level_results.csv"))

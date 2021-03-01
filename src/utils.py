@@ -32,8 +32,16 @@ def evalSlide(ori, mask, ho, model_data, model_name):
     return perf_df
 
 def data_norm(data, method='cpm'):
-    assert method in ['median', 'cpm', 'logCPM', 'logMed']
-    med_libSize =  data.sum(axis=1).median()
+    assert method in ['none','median', 'cpm', 'logCPM', 'logMed']
+
+    if method == "none":
+        return data
+
+    libsize = pd.DataFrame({"depth":data.sum(axis=1).to_numpy()},
+        index=data.index)
+
+    med_libSize =  libsize.depth.median()
+
     if method == "median":
         data = data.apply(lambda x: x * med_libSize/ x.sum() , axis=1)
     elif method == "logMed":
@@ -43,7 +51,24 @@ def data_norm(data, method='cpm'):
         data = np.log2(data+1)
     else:
         data = data.apply(lambda x: x * (10 ** 6)/ x.sum() , axis=1)
-    return data
+    return data, libsize
+
+def data_denorm(data, libfile, method):
+    assert method in ['none','median', 'cpm', 'logCPM', 'logMed']
+    libsize = pd.read_csv(libfile, index_col=0)
+    libsize = libsize.loc[data.index,:] # n*1
+    count = data.copy() # n*p
+
+    if method in ['logCPM', 'logMed']:
+        count = (np.power(2, count) - 1).astype(int)
+
+    if method in ["median", "logMed"]:
+        med_libSize = libsize.depth.median()
+        count = (count / med_libSize)
+    else:
+        count = (count / (10 ** 6))
+    count = count.mul(libsize.depth.to_numpy(), axis=0).astype(int)
+    return count
 
 # Input: count matrix, rows are samples, columns are genes
 def filterGene_std(count_matrix, std_ratio=0.5):
@@ -127,6 +152,31 @@ def read_ST_data(count_fn, sep=","):
                          "coordY": [int(i.split("x")[1]) for i in data.index.tolist()]},
                          index = data.index)
     return data, meta
+
+def generate_cv_masks(original_data, genes, k=2):
+    np.random.seed(2021)
+    # make a dumb hold out mask data
+    ho_mask = pd.DataFrame(columns = original_data.columns,
+                                index = original_data.index,
+                                data = np.zeros(original_data.shape))
+    # make templates for masks and ho data for k fold cross validation
+    ho_masks = [ho_mask.copy() for i in range(k)]
+    ho_dsets = [original_data.copy() for i in range(k)]
+    # for each gene, crosss validate
+    for gene in genes:
+        nonzero_spots = original_data.index[original_data[gene] > 0].tolist()
+        np.random.shuffle(nonzero_spots)
+        nspots = len(nonzero_spots)
+        foldLen = int(nspots/k)
+        for i in range(k):
+            if i != (k-1):
+                spot_sampled = nonzero_spots[i*foldLen: (i+1)*foldLen]
+            else:
+                spot_sampled = nonzero_spots[i*foldLen: ]
+            ho_masks[i].loc[spot_sampled, gene] = 1
+            ho_dsets[i].loc[spot_sampled, gene] = 0
+    return ho_dsets, ho_masks
+
 
 if __name__ == "__main__":
     count_matrix = pd.read_csv("/Users/linhuaw/Documents/STICK/results/mouse_wt/logCPM.csv", index_col=0)

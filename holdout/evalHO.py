@@ -121,7 +121,7 @@ def evalAll(data_folder, model_names, cvFold=5):
 			model_perf_df = evalSlide(ori, mask, ho, model_data, model_name)
 			t4 = time()
 			print("[Fold %d, %s] Slide-level performance evaluation elapsed %.1f seconds." %(seed, model_name, t4-t3))
-			spot_perf_df = evalSpot(ori, mask, meta, model_data, model_name)
+			#spot_perf_df = evalSpot(ori, mask, meta, model_data, model_name)
 			t5 = time()
 			print("[Fold %d, %s] Spot-level  performance evaluation elapsed %.1f seconds." %(seed, model_name, t5-t4))
 			gene_perf_df = evalGene(ori, mask, ho,  meta, model_data, model_name)
@@ -135,7 +135,7 @@ def evalAll(data_folder, model_names, cvFold=5):
 			gene_perf_dfs.append(gene_perf_df)
 
 	model_perf_dfs = pd.concat(model_perf_dfs)
-	spot_perf_dfs = pd.concat(spot_perf_dfs)
+	#spot_perf_dfs = pd.concat(spot_perf_dfs)
 	gene_perf_dfs = pd.concat(gene_perf_dfs)
 	return model_perf_dfs, spot_perf_dfs, gene_perf_dfs
 	# return model_perf_dfs
@@ -152,7 +152,7 @@ def main(data_folder):
 	slidePerf, spotPerf, genePerf = evalAll(data_folder, model_names, 2)
 	## save performance
 	slidePerf.to_csv(os.path.join(perf_folder, "slide_level_results.csv"))
-	spotPerf.to_csv(os.path.join(perf_folder, "spot_level_results.csv"))
+	#spotPerf.to_csv(os.path.join(perf_folder, "spot_level_results.csv"))
 	genePerf.to_csv(os.path.join(perf_folder, "gene_level_results.csv"))
 
 if __name__ == "__main__":

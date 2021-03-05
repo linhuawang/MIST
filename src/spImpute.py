@@ -28,39 +28,42 @@ def spImpute(data_obj, nExperts=10): # multiprocessing not implemented yet
 	merge = data_obj.merge
 	cor_mat = data_obj.cormat
 	#nodes = construct_graph(meta, radius)
-	ccs = spatialCCs(nodes, cor_mat, epsilon, merge)
+	ccs = spatialCCs(nodes, cor_mat, epsilon, merge=0)
 
-	cc_time = time()
-	print("%d connected components detected in %.1f seconds."\
-	 				%(len(ccs), cc_time - start_time))
+	imputed_whole = rankMinImpute(data)
+	t1 = time()
+	print("Base line imputation done in %.1f seconds ..." %(t1  - start_time))
+	member_df, f = plot_ccs(ccs, meta, "epsilon = %.2f" %epsilon)
 
-	f = plot_ccs(ccs, meta, "epsilon = %.2f" %epsilon)
 	if len(ccs) == 1:
-		return rankMinImpute(data_obj.count), f
+		return imputed_whole, member_df, f
 		
 	spots = data.index.tolist()
 	known_idx = np.where(data.values)
 	imputed = data.copy()
 	for i1 in range(len(ccs)):
 		cc = ccs[i1]
-		cc_spots = [c.name for c in cc]
-		other_spots = [s for s in spots if s not in cc_spots]
-		m = len(cc_spots)
-		s = int(len(other_spots) / 10) # sampling is based on current cluster size
-		values = np.zeros(shape=(m, data.shape[1], nExperts))
-		for i2 in range(nExperts):
-			np.random.seed(i2)
-			sampled_spot = list(np.random.choice(other_spots, s, replace=False))
-			ri_spots = cc_spots + sampled_spot
-			ri_impute = rankMinImpute(data.loc[ri_spots,:])
-			values[:,:,i2] = ri_impute.values[:m, :]
-			print("[%.1f] Outer: %d/%d, inner: %d/%d" %(epsilon, i1+1, len(ccs), i2+1, nExperts))
+		if len(cc) > 5:
+			cc_spots = [c.name for c in cc]
+			other_spots = [s for s in spots if s not in cc_spots]
+			m = len(cc_spots)
+			s = int(len(other_spots) / 10) # sampling is based on current cluster size
+			values = np.zeros(shape=(m, data.shape[1], nExperts))
+			for i2 in range(nExperts):
+				np.random.seed(i2)
+				sampled_spot = list(np.random.choice(other_spots, s, replace=False))
+				ri_spots = cc_spots + sampled_spot
+				ri_impute = rankMinImpute(data.loc[ri_spots,:])
+				values[:,:,i2] = ri_impute.values[:m, :]
+				print("[%.1f] Outer: %d/%d, inner: %d/%d" %(epsilon, i1+1, len(ccs), i2+1, nExperts))
 
-		imputed.loc[cc_spots,:] = np.mean(values, axis=2)
+			imputed.loc[cc_spots,:] = np.mean(values, axis=2)
+		else:
+			imputed.loc[cc_spots,:] = imputed_whole.loc[cc_spots,:]
 
 	assert np.all(data.values[known_idx] > 0)
 	imputed.values[known_idx] = data.values[known_idx]
-	return imputed, f
+	return imputed, member_df, f
 
 
 def rankMinImpute(data):
@@ -118,7 +121,7 @@ def ep_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold):
 	perf_dfs = []
 	for ep in eps:
 		ho_data_obj.update_ep(ep)
-		model_data,_ = spImpute(ho_data_obj, nExperts=5)
+		model_data,_,_ = spImpute(ho_data_obj, nExperts=5)
 		perf_df = utils.evalSlide(ori_data, ho_mask, ho_data, model_data, ep)
 		perf_dfs.append(perf_df)
 	perf_dfs = pd.concat(perf_dfs)
@@ -191,9 +194,11 @@ if __name__ == "__main__":
 
 	data = Data.Data(countpath=count_fn,radius=radius,
 					merge=merge,norm=norm, epsilon=epi)
-	imputed, figure = main(data, select=select)
+	imputed, member_df, figure = main(data, select=select)
 
 	if out_fn != "none":
 		imputed.to_csv(out_fn)
 		fig_out = out_fn.split(".csv")[0] + ".png"
+		member_out = out_fn.split(".csv")[0] + "_cluster_info.csv"
 		figure.savefig(fig_out)
+		member_df.to_csv(member_out)

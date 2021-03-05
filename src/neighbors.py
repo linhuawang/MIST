@@ -80,7 +80,7 @@ def removeNodes(nodes, cnns):
 			updated_nodes.append(nodes[i])
 	return updated_nodes
 
-def spatialCCs(nodes, cor_mat, epi=0, merge=5):
+def spatialCCs(nodes, cor_mat, epi, merge=5):
 	ccs = []
 	while len(nodes) > 0:
 		cnns = set([])
@@ -137,28 +137,53 @@ def plot_ccs(ccs, meta, title="none"):
 	cc10, cc2, cc1 = 0, 0, 0
 	xmin, xmax = meta.iloc[:, 0].min(), meta.iloc[:, 0].max()
 	ymin, ymax = meta.iloc[:, 1].min(), meta.iloc[:, 1].max()
-	colors = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
-				'#911eb4', '#46f0f0', '#f032e6','#bcf60c', '#fabebe',
-				'#008080', '#e6beff','#9a6324', '#fffac8', '#800000',
-				 '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080',
-				  '#ffffff', '#000000']
+	# colors = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
+	# 			'#911eb4', '#46f0f0', '#f032e6','#bcf60c', '#fabebe',
+	# 			'#008080', '#e6beff','#9a6324', '#fffac8', '#800000',
+	# 			 '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080',
+	# 			  '#ffffff', '#000000']
+
+	colors = ["red", "orange", "yellow", "green",
+				 "cyan", "blue", "purple", "gray",
+				  "pink", "black"]
+
 	df = meta.copy()
-	df['color'] = 'black'
-	df.columns=['x','y', 'color']
+	# df['color'] = 'black'
+	df["size"] = 1
+	df.columns=['x','y', 'size']
+
+	df['k'] = -1
 
 	for i in range(len(ccs)):
 		cc = ccs[i]
-		if len(cc) > 5:
-			for node in cc:
-				x, y = node.x, node.y
-				df.loc[(df.x == x) & (df.y==y),"color"] = colors[i]
+#		if len(cc) > 5:
+		for node in cc:
+			x, y = node.x, node.y
+			df.loc[(df.x == x) & (df.y==y),"size"] = len(cc)
+			df.loc[(df.x == x) & (df.y==y),"k"] = i
+
+	df = df.sort_values("size", ascending=False)
+	df['cluster_name'] = df[['size','k']].apply(lambda x: "_".join(x.astype(str)), axis=1)
+
+	unique_sizes = df["cluster_name"].drop_duplicates().tolist()
+	cluster_dict = dict(zip(unique_sizes, 
+		range(len(unique_sizes))))
+	clusters = []
+	for s in df["cluster_name"].tolist():
+		i = cluster_dict[s]
+		if i > len(colors) - 1:
+			clusters.append("white")
+		else:
+			clusters.append(colors[i])
+	df['cluster'] = clusters
+	# return df
 	f = plt.figure(figsize=(4,4))
-	plt.scatter(x=df.x.to_numpy(), y=df.y.to_numpy(), c=df.color.tolist())
+	plt.scatter(x=df.x.to_numpy(), y=df.y.to_numpy(), c=df.cluster.tolist())
 	plt.gca().invert_yaxis()
 	if title != "none":
 		plt.title(title)
 	plt.close()
-	return f
+	return df, f
 
 # input count matrix should be log scaled
 def detectSDEs(fn, ep, log=False):

@@ -19,7 +19,9 @@ class Data(object):
 			assert isinstance(count, pd.DataFrame) and isinstance(meta, pd.DataFrame)
 
 		if self.norm != "none":
-			count = utils.data_norm(count, method=self.norm)
+			count, libsize = utils.data_norm(count, method=self.norm)
+			self.libsize=libsize
+			
 		self.count = count
 		self.meta = meta
 

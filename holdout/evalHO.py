@@ -129,8 +129,8 @@ def evalAll(data_folder, model_names, cvFold=5):
 			print("[Fold %d, %s] Gene-level  performance evaluation elapsed %.1f seconds." %(seed, model_name, t6-t5))
 			model_perf_df['cvFold'] = seed
 			model_perf_dfs.append(model_perf_df)
-			spot_perf_df['cvFold'] = seed
-			spot_perf_dfs.append(spot_perf_df)
+			# spot_perf_df['cvFold'] = seed
+			# spot_perf_dfs.append(spot_perf_df)
 			gene_perf_df['cvFold'] = seed
 			gene_perf_dfs.append(gene_perf_df)
 

@@ -11,7 +11,7 @@ if __name__ == '__main__':
 	folder = sys.argv[1]
 	norm = "cpm"
 	ep = 0.7
-	merge = 5
+	merge = 0
 	radius = 2
 
 	if "slideseq" in folder:
@@ -25,16 +25,16 @@ if __name__ == '__main__':
 		for imputer_name in ["spImpute"]:
 #		for imputer_name in ["MAGIC", "knnSmooth","spKNN"]:
 			norm_outF = os.path.join(folder, "%s_%d.csv" %(imputer_name, i))
-			raw_outF = os.path.join(folder, "%s_raw_%d.csv" %(imputer_name, i))
-			libsizeF = os.path.join(folder, "libsize.csv")
+			#raw_outF = os.path.join(folder, "%s_raw_%d.csv" %(imputer_name, i))
+			#libsizeF = os.path.join(folder, "libsize.csv")
 			st_time = time()
 			imputer = Imputer(imputer_name, data)
 
 			imputed_data = imputer.fit_transform()
-			imputed_raw = utils.data_denorm(imputed_data, libsizeF, norm)
+			#imputed_raw = utils.data_denorm(imputed_data, libsizeF, norm)
 
 			imputed_data.to_csv(norm_outF)
-			imputed_raw.to_csv(raw_outF)
+			#imputed_raw.to_csv(raw_outF)
 
 			print("[%d, %s] elapsed %.1f seconds.." %(i, imputer_name, time() - st_time))
 

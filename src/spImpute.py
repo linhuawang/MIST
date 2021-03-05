@@ -59,6 +59,7 @@ def spImpute(data_obj, nExperts=10): # multiprocessing not implemented yet
 
 			imputed.loc[cc_spots,:] = np.mean(values, axis=2)
 		else:
+			cc_spots = [c.name for c in cc]
 			imputed.loc[cc_spots,:] = imputed_whole.loc[cc_spots,:]
 
 	assert np.all(data.values[known_idx] > 0)

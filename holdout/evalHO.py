@@ -103,46 +103,42 @@ def evalAll(data_folder, model_names, cvFold=5):
 		genes = mask.columns.tolist()
 		ho = pd.read_csv("%s/ho_data_%d.csv" %(data_folder, seed), index_col=0)
 		ho = ho.loc[mask.index, genes]
-		ori, meta = utils.read_ST_data("%s/raw.csv" %data_folder)
+		ori, meta = utils.read_ST_data("%s/norm.csv" %data_folder)
+
 		t1 = time()
 		print("[Fold %d] Ground truth data loading elapsed %.1f seconds." %(seed, t1 - st))
 		ori = ori.loc[mask.index, genes]
-#		ori = np.log2(ori + 1) #CPM to logCPM
+		ori = np.log2(ori + 1) #CPM to logCPM
 		for model_name in model_names:
 			t2 = time()
 			fn = "%s/%s_raw_%d.csv" %(data_folder, model_name, seed)
 			model_data = pd.read_csv(fn, index_col=0)
 			model_data = model_data.loc[ori.index, genes]
-#			model_data = np.log2(model_data + 1)
+			model_data = np.log2(model_data + 1)
 
 			t3 = time()
 			print("[Fold %d, %s] Model data loading elapsed %.1f seconds." %(seed, model_name, t3-t2))
 			model_perf_df = evalSlide(ori, mask, ho, model_data, model_name)
 			t4 = time()
 			print("[Fold %d, %s] Slide-level performance evaluation elapsed %.1f seconds." %(seed, model_name, t4-t3))
-
-#			try:
-#				spot_perf_df = evalSpot(ori, mask, meta, model_data, model_name)
-#			except:
-#				spot_perf_df = model_perf_df
-#			t5 = time()
-#			print("[Fold %d, %s] Spot-level  performance evaluation elapsed %.1f seconds." %(seed, model_name, t5-t4))
-#			gene_perf_df = evalGene(ori, mask, ho,  meta, model_data, model_name)
-#			t6 = time()
-#			print("[Fold %d, %s] Gene-level  performance evaluation elapsed %.1f seconds." %(seed, model_name, t6-t5))
+			spot_perf_df = evalSpot(ori, mask, meta, model_data, model_name)
+			t5 = time()
+			print("[Fold %d, %s] Spot-level  performance evaluation elapsed %.1f seconds." %(seed, model_name, t5-t4))
+			gene_perf_df = evalGene(ori, mask, ho,  meta, model_data, model_name)
+			t6 = time()
+			print("[Fold %d, %s] Gene-level  performance evaluation elapsed %.1f seconds." %(seed, model_name, t6-t5))
 			model_perf_df['cvFold'] = seed
 			model_perf_dfs.append(model_perf_df)
+			spot_perf_df['cvFold'] = seed
+			spot_perf_dfs.append(spot_perf_df)
+			gene_perf_df['cvFold'] = seed
+			gene_perf_dfs.append(gene_perf_df)
 
-#			spot_perf_df['cvFold'] = seed
-#			spot_perf_dfs.append(spot_perf_df)
-#			gene_perf_df['cvFold'] = seed
-#			gene_perf_dfs.append(gene_perf_df)
-#
 	model_perf_dfs = pd.concat(model_perf_dfs)
-#	spot_perf_dfs = pd.concat(spot_perf_dfs)
-#	gene_perf_dfs = pd.concat(gene_perf_dfs)
-#	return model_perf_dfs, spot_perf_dfs, gene_perf_dfs
-	return model_perf_dfs
+	spot_perf_dfs = pd.concat(spot_perf_dfs)
+	gene_perf_dfs = pd.concat(gene_perf_dfs)
+	return model_perf_dfs, spot_perf_dfs, gene_perf_dfs
+	# return model_perf_dfs
 ### Main
 def main(data_folder):
 	## create a performance folder to save results if not exists
@@ -152,12 +148,12 @@ def main(data_folder):
 	model_names = ["spImpute", "mcImpute","MAGIC", "spKNN", "knnSmooth"]
 	#model_names = ["spImpute","mcImpute"]
 	## get performance
-	slidePerf = evalAll(data_folder, model_names, 5)
-#	slidePerf, spotPerf, genePerf = evalAll(data_folder, model_names, 2)
+#	slidePerf = evalAll(data_folder, model_names, 5)
+	slidePerf, spotPerf, genePerf = evalAll(data_folder, model_names, 2)
 	## save performance
 	slidePerf.to_csv(os.path.join(perf_folder, "slide_level_results.csv"))
-#	spotPerf.to_csv(os.path.join(perf_folder, "spot_level_results.csv"))
-#	genePerf.to_csv(os.path.join(perf_folder, "gene_level_results.csv"))
+	spotPerf.to_csv(os.path.join(perf_folder, "spot_level_results.csv"))
+	genePerf.to_csv(os.path.join(perf_folder, "gene_level_results.csv"))
 
 if __name__ == "__main__":
 	dataDir = sys.argv[1]

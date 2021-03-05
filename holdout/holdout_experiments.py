@@ -9,7 +9,7 @@ import utils
 
 if __name__ == '__main__':
 	folder = sys.argv[1]
-	norm = sys.argv[2]
+	norm = "cpm"
 	ep = 0.7
 	merge = 5
 	radius = 2
@@ -22,8 +22,8 @@ if __name__ == '__main__':
 		fn = os.path.join(folder, "ho_data_%d.csv" %i)
 		data = Data.Data(countpath=fn, radius=radius, merge=merge)
 		# for imputer_name in ["MAGIC", "knnSmooth", "mcImpute", "spKNN", "spImpute"]:
-#		for imputer_name in ["spImpute", "mcImpute"]:
-		for imputer_name in ["MAGIC", "knnSmooth","spKNN"]:
+		for imputer_name in ["spImpute"]:
+#		for imputer_name in ["MAGIC", "knnSmooth","spKNN"]:
 			norm_outF = os.path.join(folder, "%s_%d.csv" %(imputer_name, i))
 			raw_outF = os.path.join(folder, "%s_raw_%d.csv" %(imputer_name, i))
 			libsizeF = os.path.join(folder, "libsize.csv")

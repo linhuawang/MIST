@@ -111,7 +111,7 @@ def evalAll(data_folder, model_names, cvFold=5):
 		ori = np.log2(ori + 1) #CPM to logCPM
 		for model_name in model_names:
 			t2 = time()
-			fn = "%s/%s_raw_%d.csv" %(data_folder, model_name, seed)
+			fn = "%s/%s_%d.csv" %(data_folder, model_name, seed)
 			model_data = pd.read_csv(fn, index_col=0)
 			model_data = model_data.loc[ori.index, genes]
 			model_data = np.log2(model_data + 1)

@@ -147,7 +147,7 @@ def select_ep(original_data, meta_data, cor_mat, k=2):
 		training_data.columns.tolist(), 2)
 	
 	perf_dfs = []
-	for fd in range(2):
+	for fd in range(1):
 		ho_data, ho_mask = ho_dsets[fd], ho_masks[fd]
 		perf_df = ep_perf(ho_data, ho_mask, meta_data, training_data, cor_mat, fd)
 		perf_dfs.append(perf_df)

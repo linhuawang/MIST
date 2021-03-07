@@ -18,7 +18,7 @@ from tqdm import tqdm, trange
 import utils
 import Data
 
-def spImpute(data_obj, nExperts=10): # multiprocessing not implemented yet
+def spImpute(data_obj, nExperts=10, plot=False): # multiprocessing not implemented yet
 	start_time = time()
 	data = data_obj.count
 	meta = data_obj.meta
@@ -36,11 +36,14 @@ def spImpute(data_obj, nExperts=10): # multiprocessing not implemented yet
 	imputed_whole = rankMinImpute(data)
 	t1 = time()
 	print("Base line imputation done in %.1f seconds ..." %(t1  - start_time))
-	member_df, f = plot_ccs(ccs, meta, "epsilon = %.2f" %epsilon)
+	if plot:
+		member_df = plot_ccs(ccs, meta, "epsilon = %.2f" %epsilon)
 
-	if len(ccs) == 1:
-		return imputed_whole, member_df, f
-		
+	if (len(ccs) == 1) and (plot):
+		return imputed_whole, member_df
+	elif (len(ccs) == 1):
+		return imputed_whole
+
 	spots = data.index.tolist()
 	known_idx = np.where(data.values)
 	imputed = data.copy()
@@ -59,7 +62,6 @@ def spImpute(data_obj, nExperts=10): # multiprocessing not implemented yet
 				ri_impute = rankMinImpute(data.loc[ri_spots,:])
 				values[:,:,i2] = ri_impute.values[:m, :]
 				print("[%.1f] Outer: %d/%d, inner: %d/%d" %(epsilon, i1+1, len(ccs), i2+1, nExperts))
-
 			imputed.loc[cc_spots,:] = np.mean(values, axis=2)
 		else:
 			cc_spots = [c.name for c in cc]
@@ -67,7 +69,11 @@ def spImpute(data_obj, nExperts=10): # multiprocessing not implemented yet
 
 	assert np.all(data.values[known_idx] > 0)
 	imputed.values[known_idx] = data.values[known_idx]
-	return imputed, member_df, f
+
+	if plot:
+		return imputed, member_df
+	else:
+		return imputed
 
 
 def rankMinImpute(data):
@@ -125,7 +131,7 @@ def ep_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold):
 	perf_dfs = []
 	for ep in eps:
 		ho_data_obj.update_ep(ep)
-		model_data,_,_ = spImpute(ho_data_obj, nExperts=5)
+		model_data = spImpute(ho_data_obj, nExperts=5, plot=False)
 		perf_df = utils.evalSlide(ori_data, ho_mask, ho_data, model_data, ep)
 		perf_dfs.append(perf_df)
 	perf_dfs = pd.concat(perf_dfs)
@@ -168,7 +174,7 @@ def main(data, select=1):
 	if select == 1:
 		ep = select_ep(count, meta, cormat)
 		data.update_ep(ep)
-	return spImpute(data)
+	return spImpute(data, nExperts=10, plot=True)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Algorithm variables.')
@@ -202,7 +208,5 @@ if __name__ == "__main__":
 
 	if out_fn != "none":
 		imputed.to_csv(out_fn)
-		fig_out = out_fn.split(".csv")[0] + ".png"
 		member_out = out_fn.split(".csv")[0] + "_cluster_info.csv"
-		figure.savefig(fig_out)
 		member_df.to_csv(member_out)

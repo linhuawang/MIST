@@ -204,7 +204,7 @@ if __name__ == "__main__":
 
 	data = Data.Data(countpath=count_fn,radius=radius,
 					merge=merge,norm=norm, epsilon=epi)
-	imputed, member_df, figure = main(data, select=select)
+	imputed, member_df = main(data, select=select)
 
 	if out_fn != "none":
 		imputed.to_csv(out_fn)

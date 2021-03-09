@@ -174,10 +174,11 @@ def eval_LCN_runner(param):
 		model_df = pd.read_csv(join(join(projDir, dn), "%s_%d.csv" %(model, fd)), index_col=0)
 		model_df = np.log2(model_df + 1)
 		model_perf = evalSlide(observed, mask, ho, model_df, model, spots=LCN_spots)
-		model_perf["cvFold"] = fd
-		model_perf["data"] = dn
-		print(model_perf)
 		results.append(model_perf)
+	results = pd.concat(results)
+	results["cvFold"] = fd
+	results["data"] = dn
+	print(results)
 	return results
 
 def eval_LCNs():

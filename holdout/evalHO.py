@@ -97,9 +97,15 @@ def evalSlide(ori, mask, ho, model_data, model_name, spots=None):
 	snr = np.log2(np.sum(imp) / np.sum(np.absolute(tru-imp)))
 	rmse = np.sqrt(np.mean(np.square(imp - tru)))
 	mape = np.mean(np.divide(np.absolute(imp - tru), tru))
-	pcc = pearsonr(tru, imp)[0]
+
+	try:
+		pcc = pearsonr(tru, imp)[0]
+	except:
+		pcc = None
+
 	MR1 = float((ho_data == 0).sum().sum()) / np.prod(ho_data.shape)
 	MR2 = float((imputed_data == 0).sum().sum()) / np.prod(imputed_data.shape)
+	
 	perf_df = pd.DataFrame(data=[[rmse, mape, snr, pcc, model_name, MR1, MR2, MR1-MR2]],
 			 columns= ['RMSE', 'MAPE', 'SNR', 'PCC', 'ModelName', 'hoMR', 'impMR', 'redMR'])
 	return perf_df

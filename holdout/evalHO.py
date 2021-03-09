@@ -162,7 +162,7 @@ def evalAll(data_folder, model_names, cvFold=5):
 
 def eval_LCN_runner(param):
 	dn, fd = param
-	models = ["spImpute", "mcImpute"]
+	models = ["spImpute", "mcImpute", "MAGIC", "knnSmooth","spKNN"]
 	projDir = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered"
 	LCN_spots = LCN_captured_spots(join(projDir, dn), fd)
 	ho = pd.read_csv(join(join(projDir, dn), "ho_data_%d.csv" %fd), index_col=0)
@@ -184,7 +184,7 @@ def eval_LCN_runner(param):
 def eval_LCNs():
 	projDir = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered"
 	#projDir = "~/Documents/spImpute/paper_data/holdout_test/"
-	data_names = ["MouseWT", "MouseAD", "Melanoma1", "Melanoma2", "Prostate"]
+	data_names = ["MouseWT", "MouseAD", "Melanoma2", "Prostate"]
 	folds = range(5)
 	params = []
 	for dn in data_names:

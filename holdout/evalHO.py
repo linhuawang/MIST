@@ -105,7 +105,7 @@ def evalSlide(ori, mask, ho, model_data, model_name, spots=None):
 
 	MR1 = float((ho_data == 0).sum().sum()) / np.prod(ho_data.shape)
 	MR2 = float((imputed_data == 0).sum().sum()) / np.prod(imputed_data.shape)
-	
+
 	perf_df = pd.DataFrame(data=[[rmse, mape, snr, pcc, model_name, MR1, MR2, MR1-MR2]],
 			 columns= ['RMSE', 'MAPE', 'SNR', 'PCC', 'ModelName', 'hoMR', 'impMR', 'redMR'])
 	return perf_df
@@ -159,8 +159,8 @@ def evalAll(data_folder, model_names, cvFold=5):
 	return model_perf_dfs, spot_perf_dfs, gene_perf_dfs
 	# return model_perf_dfs
 def eval_LCNs():
-	#projDir1 = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered"
-	projDir = "~/Documents/spImpute/paper_data/holdout_test/"
+	projDir = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered"
+	#projDir = "~/Documents/spImpute/paper_data/holdout_test/"
 	data_names = ["MouseWT", "MouseAD", "Melanoma1", "Melanoma2", "Prostate"]
 	models = ["spImpute", "mcImpute"]
 	folds = range(5)

@@ -18,7 +18,7 @@ from tqdm import tqdm, trange
 import utils
 import Data
 
-def spImpute(data_obj, nExperts=10, plot=False): # multiprocessing not implemented yet
+def spImpute(data_obj, nExperts=10, plot=False, verbose=1): # multiprocessing not implemented yet
 	start_time = time()
 	data = data_obj.count
 	meta = data_obj.meta
@@ -31,11 +31,13 @@ def spImpute(data_obj, nExperts=10, plot=False): # multiprocessing not implement
 	ccs = spatialCCs(nodes, cor_mat, epsilon, merge=0)
 
 	n1 = float(sum([len(cc) for cc in ccs if len(cc) > 5]))
-	print("Proportion explained by connected components: %.2f" %(n1/data.shape[0]))
+	if verbose == 1:
+		print("Proportion explained by connected components: %.2f" %(n1/data.shape[0]))
 
 	imputed_whole = rankMinImpute(data)
 	t1 = time()
-	print("Base line imputation done in %.1f seconds ..." %(t1  - start_time))
+	if verbose == 1:
+		print("Base line imputation done in %.1f seconds ..." %(t1  - start_time))
 	if plot:
 		member_df = plot_ccs(ccs, meta, "epsilon = %.2f" %epsilon)
 
@@ -61,7 +63,8 @@ def spImpute(data_obj, nExperts=10, plot=False): # multiprocessing not implement
 				ri_spots = cc_spots + sampled_spot
 				ri_impute = rankMinImpute(data.loc[ri_spots,:])
 				values[:,:,i2] = ri_impute.values[:m, :]
-				print("[%.1f] Outer: %d/%d, inner: %d/%d" %(epsilon, i1+1, len(ccs), i2+1, nExperts))
+				if verbose == 1:
+					print("[%.1f] Outer: %d/%d, inner: %d/%d" %(epsilon, i1+1, len(ccs), i2+1, nExperts))
 			imputed.loc[cc_spots,:] = np.mean(values, axis=2)
 		else:
 			cc_spots = [c.name for c in cc]
@@ -127,11 +130,11 @@ def softThreshold(s, l):
 def ep_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold):
 	eps = np.arange(0.2, 0.9, 0.1)
 	ho_data_obj = Data.Data(count=ho_data, meta=meta_data, cormat=cor_mat)
-	print("Start evaluating epsilon...")
+	#print("Start evaluating epsilon...")
 	perf_dfs = []
 	for ep in eps:
 		ho_data_obj.update_ep(ep)
-		model_data = spImpute(ho_data_obj, nExperts=5, plot=False)
+		model_data = spImpute(ho_data_obj, nExperts=5, plot=False, verbose=0)
 		perf_df = utils.evalSlide(ori_data, ho_mask, ho_data, model_data, ep)
 		perf_dfs.append(perf_df)
 	perf_dfs = pd.concat(perf_dfs)
@@ -193,6 +196,7 @@ if __name__ == "__main__":
 					help='distance radius in defining edges')
 	parser.add_argument('-m', '--merge', type=int, default=5,
                                         help='distance radius in defining edges')
+	
 	args = parser.parse_args()
 	count_fn = args.countpath
 	epi = args.epislon

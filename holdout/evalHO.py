@@ -176,6 +176,7 @@ def eval_LCN_runner(param):
 		model_perf = evalSlide(observed, mask, ho, model_df, model, spots=LCN_spots)
 		model_perf["cvFold"] = fd
 		model_perf["data"] = dn
+		print(model_perf)
 		results.append(model_perf)
 	return results
 

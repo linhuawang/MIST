@@ -7,14 +7,16 @@ from scipy.stats import pearsonr
 from sklearn.metrics import r2_score, roc_auc_score, recall_score, precision_score
 import sys
 sys.path.append("../src/")
+from spImpute import select_ep
 import utils
-from utils import gene_density
 from  tqdm import trange
 from time import time
+from os.path import join
+import Data
+from neighbors import spatialCCs
 ## Evaluate spot level performance for holdout test at log2 scale
 def evalSpot(ori, mask, meta, model_data, model_name):
 	spots = mask.index[(mask == 1).any(axis=1)]
-
 	meta = meta.loc[spots,:]
 	rmses, pccs_all, snrs, mapes = [], [], [], []
 	spots_ho = []
@@ -76,17 +78,28 @@ def evalGene(ori, mask, ho, meta, model_data, model_name):
 	return gene_perf
 
 ## Evaluate slide level performance for holdout test
-def evalSlide(ori, mask, ho, model_data, model_name):
-	M = np.ravel(mask)
+def evalSlide(ori, mask, ho, model_data, model_name, spots=None):
+	if spots != None:
+		observed = ori.loc[spots,:]
+		ho_mask = mask.loc[spots,:]
+		ho_data = ho.loc[spots,:]
+		imputed_data = model_data.loc[spots,:]
+	else:
+		observed = ori.copy()
+		ho_data = ho.copy()
+		imputed_data = model_data.copy()
+		ho_mask = mask.copy()
+
+	M = np.ravel(ho_mask)
 	inds = np.where(M)
-	tru = np.ravel(ori.values)[inds]
-	imp = np.ravel(model_data.values)[inds]
+	tru = np.ravel(observed.values)[inds]
+	imp = np.ravel(imputed_data.values)[inds]
 	snr = np.log2(np.sum(imp) / np.sum(np.absolute(tru-imp)))
 	rmse = np.sqrt(np.mean(np.square(imp - tru)))
 	mape = np.mean(np.divide(np.absolute(imp - tru), tru))
 	pcc = pearsonr(tru, imp)[0]
-	MR1 = float((ho == 0).sum().sum()) / np.prod(ho.shape)
-	MR2 = float((model_data == 0).sum().sum()) / np.prod(model_data.shape)
+	MR1 = float((ho_data == 0).sum().sum()) / np.prod(ho_data.shape)
+	MR2 = float((imputed_data == 0).sum().sum()) / np.prod(imputed_data.shape)
 	perf_df = pd.DataFrame(data=[[rmse, mape, snr, pcc, model_name, MR1, MR2, MR1-MR2]],
 			 columns= ['RMSE', 'MAPE', 'SNR', 'PCC', 'ModelName', 'hoMR', 'impMR', 'redMR'])
 	return perf_df
@@ -139,6 +152,49 @@ def evalAll(data_folder, model_names, cvFold=5):
 	gene_perf_dfs = pd.concat(gene_perf_dfs)
 	return model_perf_dfs, spot_perf_dfs, gene_perf_dfs
 	# return model_perf_dfs
+def eval_LCNs():
+	#projDir1 = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered"
+	projDir = "~/Documents/spImpute/paper_data/holdout_test/"
+	data_names = ["MouseWT", "MouseAD", "Melanoma1", "Melanoma2", "Prostate"]
+	models = ["spImpute", "mcImpute"]
+	folds = range(5)
+	model_perfs = []
+
+	for dn in data_names:
+		for fd in folds:
+			LCN_spots = LCN_captured_spots(join(projDir, dn), fd)
+			ho = pd.read_csv(join(join(projDir, dn), "ho_data_%d.csv" %fd), index_col=0)
+			mask = pd.read_csv(join(join(projDir, dn), "ho_mask_%d.csv" %fd), index_col=0)
+			observed = pd.read_csv(join(join(projDir, dn), "norm.csv"), index_col=0)
+			observed = np.log2(observed + 1)
+			for model in models:
+				model_df = pd.read_csv(join(join(projDir, dn), "%s_%d.csv" %(model, fd)), index_col=0)
+				model_df = np.log2(model_df + 1)
+				model_perf = evalSlide(observed, mask, ho, model_df, model, spots=LCN_spots)
+				model_perf["cvFold"] = fd
+				model_perf["data"] = dn
+				model_perfs.append(model_perf)
+				print("[LCN spots] %s, %d, %s evaluated." %(dn, fd, model))
+
+	model_perfs = pd.concat(model_perfs)
+	model_perfs.to_csv(join(projDir, "LCNspots_slide_level_results.csv"))
+
+
+def LCN_captured_spots(folder, fd):
+	cp = join(folder, "ho_data_%d.csv" %fd)
+	ho_data_obj = Data.Data(countpath=cp,radius=1.9, merge=0)
+	ep = select_ep(ho_data_obj.count, ho_data_obj.meta, ho_data_obj.cormat)
+	ho_data_obj.update_ep(ep)
+	ccs = spatialCCs(ho_data_obj.nodes,ho_data_obj.cormat,
+		ho_data_obj.epsilon, merge=0)
+	spots = []
+
+	for cc in ccs:
+		if len(cc) > 5:
+			for node in cc:
+				spots.append(node.name)
+	return spots
+
 ### Main
 def main(data_folder):
 	## create a performance folder to save results if not exists
@@ -156,8 +212,9 @@ def main(data_folder):
 	genePerf.to_csv(os.path.join(perf_folder, "gene_level_results.csv"))
 
 if __name__ == "__main__":
-	dataDir = sys.argv[1]
-	main(dataDir)
+	# dataDir = sys.argv[1]
+	# main(dataDir)
+	eval_LCNs()
 
 
 

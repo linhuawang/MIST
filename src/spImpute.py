@@ -30,7 +30,7 @@ def spImpute(data_obj, nExperts=10, plot=False): # multiprocessing not implement
 	#nodes = construct_graph(meta, radius)
 	ccs = spatialCCs(nodes, cor_mat, epsilon, merge=0)
 
-	n1 = float(sum([len(cc) for cc in ccs if len(cc) > 1]))
+	n1 = float(sum([len(cc) for cc in ccs if len(cc) > 5]))
 	print("Proportion explained by connected components: %.2f" %(n1/data.shape[0]))
 
 	imputed_whole = rankMinImpute(data)

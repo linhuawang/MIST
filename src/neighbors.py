@@ -80,7 +80,7 @@ def removeNodes(nodes, cnns):
 			updated_nodes.append(nodes[i])
 	return updated_nodes
 
-def spatialCCs(nodes, cor_mat, epi, merge=5):
+def spatialCCs(nodes, cor_mat, epi, merge=0):
 	ccs = []
 	while len(nodes) > 0:
 		cnns = set([])
@@ -160,7 +160,7 @@ def plot_ccs(ccs, meta, title="none"):
 	for s in df["cluster_name"].tolist():
 		i = cluster_dict[s]
 		if i > len(colors) - 1:
-			clusters.append("lightdark")
+			clusters.append("lightgray")
 		else:
 			clusters.append(colors[i])
 	df['cluster'] = clusters

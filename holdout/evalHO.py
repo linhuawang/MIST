@@ -205,7 +205,7 @@ def main(data_folder):
 	#model_names = ["spImpute","mcImpute"]
 	## get performance
 #	slidePerf = evalAll(data_folder, model_names, 5)
-	slidePerf, spotPerf, genePerf = evalAll(data_folder, model_names, 2)
+	slidePerf, spotPerf, genePerf = evalAll(data_folder, model_names, 5)
 	## save performance
 	slidePerf.to_csv(os.path.join(perf_folder, "slide_level_results.csv"))
 	#spotPerf.to_csv(os.path.join(perf_folder, "spot_level_results.csv"))

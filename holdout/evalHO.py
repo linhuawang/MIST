@@ -181,6 +181,7 @@ def eval_LCNs():
 				model_perf["data"] = dn
 				model_perfs.append(model_perf)
 				print("[LCN spots] %s, %d, %s evaluated." %(dn, fd, model))
+				print(model_perf)
 
 	model_perfs = pd.concat(model_perfs)
 	model_perfs.to_csv(join(projDir, "LCNspots_slide_level_results.csv"))

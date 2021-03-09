@@ -14,6 +14,7 @@ from time import time
 from os.path import join
 import Data
 from neighbors import spatialCCs
+from multiprocessing import Pool
 ## Evaluate spot level performance for holdout test at log2 scale
 def evalSpot(ori, mask, meta, model_data, model_name):
 	spots = mask.index[(mask == 1).any(axis=1)]
@@ -158,31 +159,37 @@ def evalAll(data_folder, model_names, cvFold=5):
 	gene_perf_dfs = pd.concat(gene_perf_dfs)
 	return model_perf_dfs, spot_perf_dfs, gene_perf_dfs
 	# return model_perf_dfs
+
+def eval_LCN_runner(param):
+	dn, fd = param
+	models = ["spImpute", "mcImpute"]
+	projDir = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered"
+	LCN_spots = LCN_captured_spots(join(projDir, dn), fd)
+	ho = pd.read_csv(join(join(projDir, dn), "ho_data_%d.csv" %fd), index_col=0)
+	mask = pd.read_csv(join(join(projDir, dn), "ho_mask_%d.csv" %fd), index_col=0)
+	observed = pd.read_csv(join(join(projDir, dn), "norm.csv"), index_col=0)
+	observed = np.log2(observed + 1)
+	results = []
+	for model in models:
+		model_df = pd.read_csv(join(join(projDir, dn), "%s_%d.csv" %(model, fd)), index_col=0)
+		model_df = np.log2(model_df + 1)
+		model_perf = evalSlide(observed, mask, ho, model_df, model, spots=LCN_spots)
+		model_perf["cvFold"] = fd
+		model_perf["data"] = dn
+		results.append(model_perf)
+	return results
+
 def eval_LCNs():
 	projDir = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered"
 	#projDir = "~/Documents/spImpute/paper_data/holdout_test/"
 	data_names = ["MouseWT", "MouseAD", "Melanoma1", "Melanoma2", "Prostate"]
-	models = ["spImpute", "mcImpute"]
 	folds = range(5)
-	model_perfs = []
-
+	params = []
 	for dn in data_names:
 		for fd in folds:
-			LCN_spots = LCN_captured_spots(join(projDir, dn), fd)
-			ho = pd.read_csv(join(join(projDir, dn), "ho_data_%d.csv" %fd), index_col=0)
-			mask = pd.read_csv(join(join(projDir, dn), "ho_mask_%d.csv" %fd), index_col=0)
-			observed = pd.read_csv(join(join(projDir, dn), "norm.csv"), index_col=0)
-			observed = np.log2(observed + 1)
-			for model in models:
-				model_df = pd.read_csv(join(join(projDir, dn), "%s_%d.csv" %(model, fd)), index_col=0)
-				model_df = np.log2(model_df + 1)
-				model_perf = evalSlide(observed, mask, ho, model_df, model, spots=LCN_spots)
-				model_perf["cvFold"] = fd
-				model_perf["data"] = dn
-				model_perfs.append(model_perf)
-				print("[LCN spots] %s, %d, %s evaluated." %(dn, fd, model))
-				print(model_perf)
-
+			params.append([dn, fd])
+	p = Pool(5)
+	model_perfs = p.map(eval_LCN_runner, params)
 	model_perfs = pd.concat(model_perfs)
 	model_perfs.to_csv(join(projDir, "LCNspots_slide_level_results.csv"))
 

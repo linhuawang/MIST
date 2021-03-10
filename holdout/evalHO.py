@@ -162,7 +162,7 @@ def evalAll(data_folder, model_names, cvFold=5):
 
 def eval_LCN_runner(param):
 	dn, fd = param
-	models = ["spImpute", "mcImpute", "MAGIC", "knnSmooth","spKNN"]
+	models = ["spImpute", "mcImpute", "MAGIC", "knnSmooth","spKNN", "SAVER"]
 	projDir = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered"
 	LCN_spots = LCN_captured_spots(join(projDir, dn), fd)
 	ho = pd.read_csv(join(join(projDir, dn), "ho_data_%d.csv" %fd), index_col=0)

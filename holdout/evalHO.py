@@ -217,7 +217,7 @@ def main(data_folder):
 	perf_folder = os.path.join(data_folder, "performance")
 	if not os.path.exists(perf_folder):
 		os.mkdir(perf_folder)
-	model_names = ["spImpute", "mcImpute","MAGIC", "spKNN", "knnSmooth"]
+	model_names = ["spImpute", "mcImpute","MAGIC", "spKNN", "knnSmooth", "SAVER"]
 	#model_names = ["spImpute","mcImpute"]
 	## get performance
 #	slidePerf = evalAll(data_folder, model_names, 5)

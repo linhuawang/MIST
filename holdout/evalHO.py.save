@@ -19,28 +19,32 @@ from multiprocessing import Pool
 def evalSpot(ori, mask, meta, model_data, model_name):
 	spots = mask.index[(mask == 1).any(axis=1)]
 	meta = meta.loc[spots,:]
-	rmses, pccs_all, snrs = [], [], []
+	rmses, pccs_all, snrs, mapes = [], [], [], []
+	spots_ho = []
+
 	for i in trange(len(spots)):
 		spot = spots[i]
 		genes = mask.columns[mask.loc[spot,:] == 1].tolist()
-		try:
-			tru = ori.loc[spot, genes].to_numpy()
-			imp = model_data.loc[spot, genes].to_numpy()
-			rmses.append(np.sqrt(np.mean(np.square(imp - tru))))
-			pccs_all.append(pearsonr(imp, tru)[0])
-			snrs.append(np.log2((np.sum(imp) +1) /
-				(1+np.sum(np.absolute(tru-imp)))))
-		except:
-			rmses.append(np.nan)
-			pccs_all.append(np.nan)
-			snrs.append(np.nan)
-
-	meta = meta.loc[spots,:]
-	spot_perf = pd.DataFrame({"spot":spots, "x":meta.iloc[:,0],
-				"y":meta.iloc[:,1],"rmse":rmses,
-				"pcc": pccs_all,"snr": snrs,
-				"model":model_name})
+		if len(genes) == 0:
+			continue
+		spots_ho.append(spot)
+		tru = ori.loc[spot, genes].to_numpy()
+		imp = model_data.loc[spot, genes].to_numpy()
+		rmses.append(np.sqrt(np.mean(np.square(imp - tru))))
+		pccs_all.append(pearsonr(imp, tru)[0])
+		snrs.append(np.log2((np.sum(imp) +1) /
+			(1+np.sum(np.absolute(tru-imp)))))
+		mapes.append(np.mean(np.divide(np.absolute(imp - tru), tru)))
+	meta = meta.loc[spots_ho,:]
+	spot_perf = pd.DataFrame({"spot":spots_ho, "x":meta.iloc[:,0],
+								"y":meta.iloc[:,1],
+								"rmse":rmses,
+								"pcc": pccs_all,
+								"snr": snrs,
+								"mape":mapes,
+								"model":model_name})
 	return spot_perf
+
 ## Evaluate gene level performance for holdout test
 def evalGene(ori, mask, ho, meta, model_data, model_name):
 	genes = mask.columns[(mask == 1).any(axis=0)]
@@ -137,7 +141,7 @@ def evalAll(data_folder, model_names, cvFold=5):
 			model_perf_df = evalSlide(ori, mask, ho, model_data, model_name)
 			t4 = time()
 			print("[Fold %d, %s] Slide-level performance evaluation elapsed %.1f seconds." %(seed, model_name, t4-t3))
-			spot_perf_df = evalSpot(ori, mask, meta, model_data, model_name)
+			#spot_perf_df = evalSpot(ori, mask, meta, model_data, model_name)
 			t5 = time()
 			print("[Fold %d, %s] Spot-level  performance evaluation elapsed %.1f seconds." %(seed, model_name, t5-t4))
 			gene_perf_df = evalGene(ori, mask, ho,  meta, model_data, model_name)
@@ -145,13 +149,13 @@ def evalAll(data_folder, model_names, cvFold=5):
 			print("[Fold %d, %s] Gene-level  performance evaluation elapsed %.1f seconds." %(seed, model_name, t6-t5))
 			model_perf_df['cvFold'] = seed
 			model_perf_dfs.append(model_perf_df)
-			spot_perf_df['cvFold'] = seed
-			spot_perf_dfs.append(spot_perf_df)
+			# spot_perf_df['cvFold'] = seed
+			# spot_perf_dfs.append(spot_perf_df)
 			gene_perf_df['cvFold'] = seed
 			gene_perf_dfs.append(gene_perf_df)
 
 	model_perf_dfs = pd.concat(model_perf_dfs)
-	spot_perf_dfs = pd.concat(spot_perf_dfs)
+	#spot_perf_dfs = pd.concat(spot_perf_dfs)
 	gene_perf_dfs = pd.concat(gene_perf_dfs)
 	return model_perf_dfs, spot_perf_dfs, gene_perf_dfs
 	# return model_perf_dfs
@@ -220,17 +224,16 @@ def main(data_folder):
 	slidePerf, spotPerf, genePerf = evalAll(data_folder, model_names, 5)
 	## save performance
 	slidePerf.to_csv(os.path.join(perf_folder, "slide_level_results.csv"))
-	spotPerf.to_csv(os.path.join(perf_folder, "spot_level_results.csv"))
+	#spotPerf.to_csv(os.path.join(perf_folder, "spot_level_results.csv"))
 	genePerf.to_csv(os.path.join(perf_folder, "gene_level_results.csv"))
 
 if __name__ == "__main__":
-	proj_dir = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered"
-	dns = ["MouseWT", "MouseAD", "Melanoma2", "Prostate"]
-	for dn in dns:
+	proj_dir = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered/"
+	for dn in ['MouseWT', 'MouseAD', 'Melanoma2', 'Prostate']:
 		dataDir = join(proj_dir, dn)
 		main(dataDir)
-		print(dataDir)
-	# eval_LCNs()
+		print(dn)
+	#eval_LCNs()
 
 
 

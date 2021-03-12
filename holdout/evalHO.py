@@ -129,6 +129,11 @@ def evalAll(data_folder, model_names, cvFold=5):
 			t2 = time()
 			fn = "%s/%s_%d.csv" %(data_folder, model_name, seed)
 			model_data = pd.read_csv(fn, index_col=0)
+			## SAVER imputed by R language, - became . in the header
+			if model_name == "SAVER":
+				model_data.columns = ho.columns.tolist()
+				model_data.index = ho.index.tolist()
+				
 			model_data = model_data.loc[ori.index, genes]
 			model_data = np.log2(model_data + 1)
 

@@ -174,7 +174,7 @@ def eval_LCN_runner(param):
 	projDir = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered"
 	LCN_spots = LCN_captured_spots(join(projDir, dn), fd)
 
-	with open(join(join(projDir, dn), "LCN_spots_%d.csv" %fd)) as f:
+	with open(join(join(projDir, dn), "LCN_spots_%d.csv" %fd), "w") as f:
 		f.write(",".join(LCN_spots))
 
 	ho = pd.read_csv(join(join(projDir, dn), "ho_data_%d.csv" %fd), index_col=0)

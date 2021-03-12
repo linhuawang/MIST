@@ -23,11 +23,13 @@ def evalSpot(ori, mask, meta, model_data, model_name):
 	for i in trange(len(spots)):
 		spot = spots[i]
 		genes = mask.columns[mask.loc[spot,:] == 1].tolist()
+
 		try:
 			tru = ori.loc[spot, genes].to_numpy()
 			imp = model_data.loc[spot, genes].to_numpy()
 			rmses.append(np.sqrt(np.mean(np.square(imp - tru))))
-			pccs_all.append(pearsonr(imp, tru)[0])
+			pccs_all.append(pearsonr(ori.loc[spot,:].to_numpy(),
+					 model_data.loc[spot,:].to_numpy())[0])
 			snrs.append(np.log2((np.sum(imp) +1) /
 				(1+np.sum(np.absolute(tru-imp)))))
 		except:
@@ -52,15 +54,20 @@ def evalGene(ori, mask, ho, meta, model_data, model_name):
 	for i in trange(len(genes)):
 		gene = genes[i]
 		spots = mask.index[mask.loc[:, gene] == 1].tolist()
+
 		if len(spots) == 0:
 			continue
+			
 		genes_ho.append(gene)
 		mr = (ho.loc[:, gene] == 0).sum()/float(ho.shape[0])
 		mrs.append(mr)
 		tru = ori.loc[spots, gene].to_numpy()
 		imp = model_data.loc[spots, gene].to_numpy()
 		rmses.append(np.sqrt(np.mean(np.square(imp-tru))))
-		pccs_all.append(pearsonr(imp,tru)[0])
+
+		pccs_all.append(pearsonr(ori.loc[:, gene].to_numpy(),
+								moedel_data.loc[:, gene].to_numpy())[0])
+
 		snrs.append(np.log2((np.sum(imp) +1) /
 			(1+np.sum(np.absolute(tru-imp)))))
 		mapes.append(np.mean(np.divide(np.absolute(imp - tru), tru)))
@@ -133,7 +140,7 @@ def evalAll(data_folder, model_names, cvFold=5):
 			if model_name == "SAVER":
 				model_data.columns = ho.columns.tolist()
 				model_data.index = ho.index.tolist()
-				
+
 			model_data = model_data.loc[ori.index, genes]
 			model_data = np.log2(model_data + 1)
 

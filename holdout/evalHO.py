@@ -173,6 +173,10 @@ def eval_LCN_runner(param):
 	models = ["spImpute", "mcImpute", "MAGIC", "knnSmooth","spKNN", "SAVER"]
 	projDir = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered"
 	LCN_spots = LCN_captured_spots(join(projDir, dn), fd)
+
+	with open(join(join(projDir, dn), "LCN_spots_%d.csv" %fd)) as f:
+		f.write(",".join(LCN_spots))
+
 	ho = pd.read_csv(join(join(projDir, dn), "ho_data_%d.csv" %fd), index_col=0)
 	mask = pd.read_csv(join(join(projDir, dn), "ho_mask_%d.csv" %fd), index_col=0)
 	observed = pd.read_csv(join(join(projDir, dn), "norm.csv"), index_col=0)
@@ -193,7 +197,7 @@ def eval_LCNs():
 	projDir = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered"
 	#projDir = "~/Documents/spImpute/paper_data/holdout_test/"
 	data_names = ["MouseWT", "MouseAD", "Melanoma2", "Prostate"]
-	folds = range(5)
+	folds = range(10)
 	params = []
 	for dn in data_names:
 		for fd in folds:
@@ -236,13 +240,13 @@ def main(data_folder):
 	genePerf.to_csv(os.path.join(perf_folder, "gene_level_results.csv"))
 
 if __name__ == "__main__":
-	proj_dir = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered"
-	dns = ["MouseWT", "MouseAD", "Melanoma2", "Prostate"]
-	for dn in dns:
-		dataDir = join(proj_dir, dn)
-		main(dataDir)
-		print(dataDir)
-	# eval_LCNs()
+	# proj_dir = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered"
+	# dns = ["MouseWT", "MouseAD", "Melanoma2", "Prostate"]
+	# for dn in dns:
+	# 	dataDir = join(proj_dir, dn)
+	# 	main(dataDir)
+	# 	print(dataDir)
+	eval_LCNs()
 
 
 

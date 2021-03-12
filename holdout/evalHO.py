@@ -197,12 +197,12 @@ def eval_LCNs():
 	projDir = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered"
 	#projDir = "~/Documents/spImpute/paper_data/holdout_test/"
 	data_names = ["MouseWT", "MouseAD", "Melanoma2", "Prostate"]
-	folds = range(10)
+	folds = range(5)
 	params = []
 	for dn in data_names:
 		for fd in folds:
 			params.append([dn, fd])
-	p = Pool(5)
+	p = Pool(10)
 	model_perfs = p.map(eval_LCN_runner, params)
 	model_perfs = pd.concat(model_perfs)
 	model_perfs.to_csv(join(projDir, "LCNspots_slide_level_results.csv"))

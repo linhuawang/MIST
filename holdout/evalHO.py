@@ -57,7 +57,7 @@ def evalGene(ori, mask, ho, meta, model_data, model_name):
 
 		if len(spots) == 0:
 			continue
-			
+
 		genes_ho.append(gene)
 		mr = (ho.loc[:, gene] == 0).sum()/float(ho.shape[0])
 		mrs.append(mr)
@@ -66,7 +66,7 @@ def evalGene(ori, mask, ho, meta, model_data, model_name):
 		rmses.append(np.sqrt(np.mean(np.square(imp-tru))))
 
 		pccs_all.append(pearsonr(ori.loc[:, gene].to_numpy(),
-								moedel_data.loc[:, gene].to_numpy())[0])
+								model_data.loc[:, gene].to_numpy())[0])
 
 		snrs.append(np.log2((np.sum(imp) +1) /
 			(1+np.sum(np.absolute(tru-imp)))))

@@ -9,10 +9,10 @@ import utils
 
 if __name__ == '__main__':
 	folder = sys.argv[1]
-	norm = "cpm"
+	norm = "logMed"
 	ep = 0.7
 	merge = 0
-	radius = 2
+	radius = 1.9
 
 	if "slideseq" in folder:
 		merge = 50
@@ -21,21 +21,22 @@ if __name__ == '__main__':
 	for i in range(5):
 		fn = os.path.join(folder, "ho_data_%d.csv" %i)
 		data = Data.Data(countpath=fn, radius=radius, merge=merge)
-		# for imputer_name in ["MAGIC", "knnSmooth", "mcImpute", "spKNN", "spImpute"]:
-		for imputer_name in ["spImpute"]:
-#		for imputer_name in ["MAGIC", "knnSmooth","spKNN"]:
+		for imputer_name in ["MAGIC", "knnSmooth", "mcImpute", "spKNN", "spImpute"]:
 			norm_outF = os.path.join(folder, "%s_%d.csv" %(imputer_name, i))
-			#raw_outF = os.path.join(folder, "%s_raw_%d.csv" %(imputer_name, i))
-			#libsizeF = os.path.join(folder, "libsize.csv")
+			raw_outF = os.path.join(folder, "%s_raw_%d.csv" %(imputer_name, i))
+			libsizeF = os.path.join(folder, "libsize.csv")
+		
 			st_time = time()
 			imputer = Imputer(imputer_name, data)
-
 			imputed_data = imputer.fit_transform()
-			#imputed_raw = utils.data_denorm(imputed_data, libsizeF, norm)
+			imputed_raw = utils.data_denorm(imputed_data, libsizeF, norm)
 
+			if imputer_name == "spImpute":
+				ep = imputer.data.epsilon
+				norm_outF = os.path.join(folder, "%s_%d_%d.csv" %(imputer_name, ep*100, i))
+			
 			imputed_data.to_csv(norm_outF)
-			#imputed_raw.to_csv(raw_outF)
-
+			imputed_raw.to_csv(raw_outF)
 			print("[%d, %s] elapsed %.1f seconds.." %(i, imputer_name, time() - st_time))
 
 	# fn = os.path.join(folder, "ho_data_0.csv")

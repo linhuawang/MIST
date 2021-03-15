@@ -13,7 +13,6 @@ def main(data_folder, filt=0.5, norm="cpm", kFold=5):
 	raw_fn = join(data_folder, "raw.csv")
 	raw, meta = utils.read_ST_data(raw_fn)
 
-	#original_data = utils.filterGene_sparsity(original_data,filt)
 	normed, libsize =  utils.data_norm(raw, norm)
 
 	if norm in ["median", "logMed", "logCPM"]:

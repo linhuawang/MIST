@@ -177,7 +177,7 @@ def main(data, select=1, plot=False):
 	if select == 1:
 		ep = select_ep(count, meta, cormat)
 		data.update_ep(ep)
-	return spImpute(data, nExperts=10, plot)
+	return spImpute(data, nExperts=10, plot=plot)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Algorithm variables.')

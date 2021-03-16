@@ -28,7 +28,7 @@ class Imputer(object):
 		elif self.name == "spKNN":
 			return spKNN(self.data.count, self.data.nodes)
 		else:
-			imputed, _,_ = spImpute.main(self.data, select=1) # fixed epsilon
+			imputed = spImpute.main(self.data, plot=False) # fixed epsilon
 			return imputed
 
 def MAGIC(data):

@@ -126,15 +126,15 @@ def evalAll(data_folder, model_names, cvFold=5):
 		genes = mask.columns.tolist()
 		ho = pd.read_csv("%s/ho_data_%d.csv" %(data_folder, seed), index_col=0)
 		ho = ho.loc[mask.index, genes]
-		ori, meta = utils.read_ST_data("%s/norm.csv" %data_folder)
+		ori, meta = utils.read_ST_data("%s/raw.csv" %data_folder)
 
 		t1 = time()
 		print("[Fold %d] Ground truth data loading elapsed %.1f seconds." %(seed, t1 - st))
 		ori = ori.loc[mask.index, genes]
-		ori = np.log2(ori + 1) #CPM to logCPM
+		#ori = np.log2(ori + 1) #CPM to logCPM
 		for model_name in model_names:
 			t2 = time()
-			fn = "%s/%s_%d.csv" %(data_folder, model_name, seed)
+			fn = os.path.join(data_folder, "%s_raw_%d.csv" %(model_name, seed))
 			model_data = pd.read_csv(fn, index_col=0)
 			## SAVER imputed by R language, - became . in the header
 			if model_name == "SAVER":
@@ -142,7 +142,7 @@ def evalAll(data_folder, model_names, cvFold=5):
 				model_data.index = ho.index.tolist()
 
 			model_data = model_data.loc[ori.index, genes]
-			model_data = np.log2(model_data + 1)
+			#model_data = np.log2(model_data + 1)
 
 			t3 = time()
 			print("[Fold %d, %s] Model data loading elapsed %.1f seconds." %(seed, model_name, t3-t2))
@@ -240,13 +240,12 @@ def main(data_folder):
 	genePerf.to_csv(os.path.join(perf_folder, "gene_level_results.csv"))
 
 if __name__ == "__main__":
-	# proj_dir = "/houston_20t/alexw/ST/data/holdout_test/cpm_filtered"
-	# dns = ["MouseWT", "MouseAD", "Melanoma2", "Prostate"]
-	# for dn in dns:
-	# 	dataDir = join(proj_dir, dn)
-	# 	main(dataDir)
-	# 	print(dataDir)
-	eval_LCNs()
+	proj_dir = "/houston_20t/alexw/ST/data/holdout_test/logMedian"
+	dns = ["MouseWT", "MouseAD", "Melanoma2", "Prostate"]
+	for dn in dns:
+		dataDir = join(proj_dir, dn)
+		main(dataDir)
+		print(dataDir)
 
 
 

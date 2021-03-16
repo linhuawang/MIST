@@ -170,14 +170,14 @@ def select_ep(original_data, meta_data, cor_mat, k=2):
 	print("Epislon %.2f is selected in %.1f seconds." %(ep, end_time - start_time))
 	return ep
 
-def main(data, select=1):
+def main(data, select=1, plot=False):
 	count = data.count.copy()
 	meta = data.meta.copy()
 	cormat = data.cormat.copy()
 	if select == 1:
 		ep = select_ep(count, meta, cormat)
 		data.update_ep(ep)
-	return spImpute(data, nExperts=10, plot=True)
+	return spImpute(data, nExperts=10, plot)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Algorithm variables.')
@@ -208,7 +208,7 @@ if __name__ == "__main__":
 
 	data = Data.Data(countpath=count_fn,radius=radius,
 					merge=merge,norm=norm, epsilon=epi)
-	imputed, member_df = main(data, select=select)
+	imputed, member_df = main(data, select=select, plot=True)
 
 	if out_fn != "none":
 		imputed.to_csv(out_fn)

@@ -229,7 +229,7 @@ def main(data_folder):
 	perf_folder = os.path.join(data_folder, "performance")
 	if not os.path.exists(perf_folder):
 		os.mkdir(perf_folder)
-	model_names = ["spImpute", "mcImpute","MAGIC", "spKNN", "knnSmooth", "SAVER"]
+	model_names = ["spImpute", "mcImpute","MAGIC", "spKNN", "knnSmooth"]
 	#model_names = ["spImpute","mcImpute"]
 	## get performance
 #	slidePerf = evalAll(data_folder, model_names, 5)
@@ -241,7 +241,8 @@ def main(data_folder):
 
 if __name__ == "__main__":
 	proj_dir = "/houston_20t/alexw/ST/data/holdout_test/logMedian"
-	dns = ["MouseWT", "MouseAD", "Melanoma2", "Prostate"]
+#	dns = ["MouseWT", "MouseAD", "Melanoma", "Prostate"]
+	dns = ['Melanoma']
 	for dn in dns:
 		dataDir = join(proj_dir, dn)
 		main(dataDir)

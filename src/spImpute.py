@@ -30,12 +30,15 @@ def spImpute(data_obj, nExperts=10, plot=False, verbose=1): # multiprocessing no
 	cor_mat = data_obj.cormat
 	#nodes = construct_graph(meta, radius)
 	ccs = spatialCCs(nodes, cor_mat, epsilon, merge=0)
+	true_zeros = utils.get_true_zeros(data, meta, ccs) ## remove effect of overimputation
+	true_zeros = true_zeros.loc[data.index, data.columns]
+	zero_idx = np.where(true_zeros.values)
 
 	n1 = float(sum([len(cc) for cc in ccs if len(cc) > 5]))
 	if verbose == 1:
 		print("Proportion explained by connected components: %.2f" %(n1/data.shape[0]))
 
-	if data.refData == None:
+	if data_obj.refData == None:
 		imputed_whole = rankMinImpute(data)
 	else:
 		imputed_whole = data.refData
@@ -79,7 +82,7 @@ def spImpute(data_obj, nExperts=10, plot=False, verbose=1): # multiprocessing no
 
 	assert np.all(data.values[known_idx] > 0)
 	imputed.values[known_idx] = data.values[known_idx]
-
+	imputed.values[zero_idx] = data.values[zero_idx] # remove overimputation effect
 	if plot:
 		return imputed, member_df
 	else:

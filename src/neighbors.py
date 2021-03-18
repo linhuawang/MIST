@@ -3,7 +3,6 @@ import numpy as np
 import math
 from matplotlib import pyplot as plt
 import imageio
-from utils import *
 import seaborn as sns
 from shutil import rmtree
 import os
@@ -203,15 +202,15 @@ def detectSDEs(fn, ep, log=False):
 	print(cc_dfs)
 	return cc_dfs
 
-if __name__ == "__main__":
-	# #plot_connected_neighbors("B06_E1__17_14", cnns4, meta_data,"")
-	# data, meta = read_ST_data("/Users/linhuaw/Documents/STICK/results/mouse_wt/logCPM.csv")
-	fn = sys.argv[1]
-	data, meta = read_ST_data(fn)
-#	data, meta = read_ST_data("/Users/linhuaw/Documents/STICK/analysis/Holdout Experiments/data/MouseWT/ho_data/ho_data_0.csv")
-	cor_mat = spot_PCA_sims(data)
-	nodes = construct_graph(meta)
-	for e in [0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 0.9]:
-		ccs = spatialCCs(nodes, cor_mat, e)
-		print(len(ccs))
-		plot_ccs(ccs, meta)
+# if __name__ == "__main__":
+# 	# #plot_connected_neighbors("B06_E1__17_14", cnns4, meta_data,"")
+# 	# data, meta = read_ST_data("/Users/linhuaw/Documents/STICK/results/mouse_wt/logCPM.csv")
+# 	fn = sys.argv[1]
+# 	data, meta = read_ST_data(fn)
+# #	data, meta = read_ST_data("/Users/linhuaw/Documents/STICK/analysis/Holdout Experiments/data/MouseWT/ho_data/ho_data_0.csv")
+# 	cor_mat = spot_PCA_sims(data)
+# 	nodes = neighbors.construct_graph(meta)
+# 	for e in [0.2, 0.3, 0.5, 0.6, 0.7, 0.8, 0.9]:
+# 		ccs = spatialCCs(nodes, cor_mat, e)
+# 		print(len(ccs))
+# 		plot_ccs(ccs, meta)

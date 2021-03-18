@@ -14,7 +14,30 @@ from matplotlib import pyplot as plt
 from scipy.stats import percentileofscore as percentile
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-from Data import Data
+
+def get_true_zeros(count, meta, ccs):
+    dist_sim = spot_euc2_aff(meta)
+    np.fill_diagonal(dist_sim.values, 0)
+
+    zero_map = pd.DataFrame(data=np.zeros(count.shape), 
+        index=count.index, columns=count.columns)
+
+    zero_map[count==0] = 1
+
+    for cc in ccs:
+        spots = [c.name for c in cc]
+        if len(spots) > 1:
+            other_spots = [s for s in count.index.tolist() if s not in spots]
+            dist_sim.loc[spots, other_spots] = 0
+            dist_sim.loc[other_spots, spots] = 0
+
+    dist_sim = dist_sim.div(dist_sim.sum(axis=1), axis=0)
+    truezero_map = dist_sim @ zero_map
+    truezero_map[truezero_map <= 0.5] = 0
+    truezero_map[truezero_map > 0.5] = 1
+    truezero_map[count > 0] = 0
+    return truezero_map
+
 
 def evalSlide(ori, mask, ho, model_data, model_name):
     M = np.ravel(mask)
@@ -50,7 +73,7 @@ def data_norm(data, method='cpm'):
         data = data.apply(lambda x: x * (10 ** 6)/ x.sum() , axis=1)
         data = np.log2(data+1)
     else:
-        data = data.apply(lambda x: x * (10 ** 6)/ x.sum() , axis=1)
+        data = data.apply(lambda x: x * (10 ** 6)/ x.sum() , axis=1).astype(int)
     return data, libsize
 
 def data_denorm(data, libfile, method):
@@ -178,17 +201,4 @@ def generate_cv_masks(original_data, genes, k=2):
     return ho_dsets, ho_masks
 
 
-if __name__ == "__main__":
-    count_matrix = pd.read_csv("/Users/linhuaw/Documents/STICK/results/mouse_wt/logCPM.csv", index_col=0)
-    #print(count_matrix.shape)
-    #count_matrix = filterGene_sparsity(count_matrix, 0.4)
-    #print(count_matrix.shape)
-    cors = spot_PCA_sims(count_matrix)
-    from matplotlib import pyplot as plt
-    import seaborn as sns
-    sns.heatmap(data=cors, vmin=0, vmax=1, cmap="Blues")
-    plt.show()
-    #plt.close()
-    cors2 = spot_exp_sims(count_matrix)
-    sns.heatmap(data=cors2, vmin=0, vmax=1, cmap="Blues")
-    plt.show()
+

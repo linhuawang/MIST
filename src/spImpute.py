@@ -54,8 +54,10 @@ def spImpute(data_obj, nExperts=10, plot=False, verbose=1): # multiprocessing no
 	spots = data.index.tolist()
 	known_idx = np.where(data.values)
 	imputed = data.copy()
+	nspots = 0
 	for i1 in range(len(ccs)):
 		cc = ccs[i1]
+		nspots += len(cc)
 		if len(cc) > 5:
 			cc_spots = [c.name for c in cc]
 			other_spots = [s for s in spots if s not in cc_spots]
@@ -69,7 +71,7 @@ def spImpute(data_obj, nExperts=10, plot=False, verbose=1): # multiprocessing no
 				ri_impute = rankMinImpute(data.loc[ri_spots,:])
 				values[:,:,i2] = ri_impute.values[:m, :]
 				if verbose == 1:
-					print("[%.1f] Outer: %d/%d, inner: %d/%d" %(epsilon, i1+1, len(ccs), i2+1, nExperts))
+					print("[%.1f] Spots: %d/%d, inner: %d/%d, #spots" %(epsilon,nspots, data.shape[0], i2+1, nExperts))
 			imputed.loc[cc_spots,:] = np.mean(values, axis=2)
 		else:
 			cc_spots = [c.name for c in cc]
@@ -133,8 +135,12 @@ def softThreshold(s, l):
 
 
 def ep_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold):
+	st = time()
 	eps = np.arange(0.4, 0.9, 0.1)
 	ho_data_obj = Data.Data(count=ho_data, meta=meta_data, cormat=cor_mat)
+	imp_whole = rankMinImpute(ho_data)
+	print("Whole slide imputation done in %d seconds." %(time() - st))
+	ho_data_obj.update_refData(imp_whole)
 	#print("Start evaluating epsilon...")
 	perf_dfs = []
 	for ep in eps:
@@ -161,7 +167,7 @@ def select_ep(original_data, meta_data, cor_mat, k=2):
 		training_data.columns.tolist(), 2)
 
 	print(ho_dsets[0].shape)
-	
+
 	perf_dfs = []
 	for fd in range(1):
 		ho_data, ho_mask = ho_dsets[fd], ho_masks[fd]
@@ -179,16 +185,14 @@ def select_ep(original_data, meta_data, cor_mat, k=2):
 
 def main(data, select=1, plot=False):
 	count = data.count.copy()
-	imputed_ref = rankMinImpute(count)
-	data.update_refData(imputed_ref)
-
 	meta = data.meta.copy()
 	cormat = data.cormat.copy()
 
 	if select == 1:
 		ep = select_ep(count, meta, cormat)
-		data.update_ep(ep)
-
+		data.update_ep(ep)		
+	# imputed_ref = rankMinImpute(count)
+	# data.update_refData(imputed_ref)
 	return spImpute(data, nExperts=10, plot=plot)
 
 if __name__ == "__main__":

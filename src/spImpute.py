@@ -17,6 +17,7 @@ from scipy.sparse import csgraph
 from tqdm import tqdm, trange
 import utils
 import Data
+import datetime
 
 def spImpute(data_obj, nExperts=10, plot=False, verbose=1): # multiprocessing not implemented yet
 	start_time = time()
@@ -34,7 +35,11 @@ def spImpute(data_obj, nExperts=10, plot=False, verbose=1): # multiprocessing no
 	if verbose == 1:
 		print("Proportion explained by connected components: %.2f" %(n1/data.shape[0]))
 
-	imputed_whole = rankMinImpute(data)
+	if data.refData == None:
+		imputed_whole = rankMinImpute(data)
+	else:
+		imputed_whole = data.refData
+
 	t1 = time()
 	if verbose == 1:
 		print("Base line imputation done in %.1f seconds ..." %(t1  - start_time))
@@ -128,13 +133,13 @@ def softThreshold(s, l):
 
 
 def ep_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold):
-	eps = np.arange(0.2, 0.9, 0.1)
+	eps = np.arange(0.4, 0.9, 0.1)
 	ho_data_obj = Data.Data(count=ho_data, meta=meta_data, cormat=cor_mat)
 	#print("Start evaluating epsilon...")
 	perf_dfs = []
 	for ep in eps:
 		ho_data_obj.update_ep(ep)
-		model_data = spImpute(ho_data_obj, nExperts=5, plot=False, verbose=0)
+		model_data = spImpute(ho_data_obj, nExperts=5, plot=False, verbose=1)
 		perf_df = utils.evalSlide(ori_data, ho_mask, ho_data, model_data, ep)
 		perf_dfs.append(perf_df)
 	perf_dfs = pd.concat(perf_dfs)
@@ -154,6 +159,8 @@ def select_ep(original_data, meta_data, cor_mat, k=2):
 	# generate k fold cross validation datasets
 	ho_dsets, ho_masks = utils.generate_cv_masks(training_data,\
 		training_data.columns.tolist(), 2)
+
+	print(ho_dsets[0].shape)
 	
 	perf_dfs = []
 	for fd in range(1):
@@ -172,11 +179,16 @@ def select_ep(original_data, meta_data, cor_mat, k=2):
 
 def main(data, select=1, plot=False):
 	count = data.count.copy()
+	imputed_ref = rankMinImpute(count)
+	data.update_refData(imputed_ref)
+
 	meta = data.meta.copy()
 	cormat = data.cormat.copy()
+
 	if select == 1:
 		ep = select_ep(count, meta, cormat)
 		data.update_ep(ep)
+
 	return spImpute(data, nExperts=10, plot=plot)
 
 if __name__ == "__main__":

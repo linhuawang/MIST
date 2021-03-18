@@ -35,9 +35,13 @@ class Data(object):
 		self.nodes = neighbors.construct_graph(self.meta, self.radius)
 		self.merge= merge
 		self.epsilon=epsilon
+		self.refData=None
 
 	def update_ep(self, ep):
 		self.epsilon=ep
 
 	def update_cormat(self, cormat):
 		self.cormat = cormat
+		
+	def update_refData(self, refData):
+		self.refData

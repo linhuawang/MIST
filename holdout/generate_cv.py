@@ -32,7 +32,7 @@ def main(data_folder, filt=0.5, norm="cpm", kFold=5):
 	#genes = normFilt.columns.tolist()
 	print("Holdouut %s genes." %(normed.shape[1]))
 	# generate 5 fold cross validation datasets
-	_, ho_masks = utils.generate_cv_masks(normed, genes,5)
+	_, ho_masks = utils.generate_cv_masks(normed, normed.columns.tolist(), 5)
 
 	for fd in range(kFold):
 		#ho_data, ho_mask = ho_dsets[fd], ho_masks[fd]

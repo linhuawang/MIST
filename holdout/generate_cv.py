@@ -41,8 +41,8 @@ def main(data_folder, filt=0.5, norm="cpm", kFold=5):
 		#ho_data.to_csv(data_folder + "/ho_data_%d.csv" %fd)
 		#ho_raw.to_csv(join(data_folder, "ho_raw_%d.csv" %fd))
 		ho_mask.to_csv(data_folder + "/ho_mask_%d.csv" %fd)
-		#print("[Fold %d] Hold out data generated, %d genes, %d spots." \
-		#	%(fd, ho_data.shape[1], ho_data.shape[0]))
+		# print("[Fold %d] Hold out data generated, %d genes, %d spots." \
+		# 	%(fd, ho_data.shape[1], ho_data.shape[0]))
 
 if __name__ == "__main__":
 	folder = sys.argv[1]

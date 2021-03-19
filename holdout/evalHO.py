@@ -116,7 +116,7 @@ def evalSlide(ori, mask, ho, model_data, model_name, spots=None):
 	return perf_df
 
 ## Function to evaluate all models for one dataset
-def evalAll(data_folder, model_names, cvFold=5):
+def evalAll(data_folder, model_names, slideonly=True, cvFold=5):
 	# Slide performance
 	model_perf_dfs = []
 	spot_perf_dfs = []
@@ -125,14 +125,15 @@ def evalAll(data_folder, model_names, cvFold=5):
 		st = time()
 		mask = pd.read_csv("%s/ho_mask_%d.csv" %(data_folder, seed), index_col=0)
 		genes = mask.columns.tolist()
-		ho = pd.read_csv("%s/ho_data_%d.csv" %(data_folder, seed), index_col=0)
-		ho = ho.loc[mask.index, genes]
+		# ho = pd.read_csv("%s/ho_data_%d.csv" %(data_folder, seed), index_col=0)
+		# ho = ho.loc[mask.index, genes]
 		#ori, meta = utils.read_ST_data("%s/raw.csv" %data_folder)
 		ori, meta = utils.read_ST_data("%s/norm.csv" %data_folder)
-
 		t1 = time()
 		print("[Fold %d] Ground truth data loading elapsed %.1f seconds." %(seed, t1 - st))
 		ori = ori.loc[mask.index, genes]
+		ho = ori.copy()
+		ho[mask==1] = 0
 		#ori = np.log2(ori + 1) #CPM to logCPM
 		for model_name in model_names:
 			t2 = time()
@@ -148,30 +149,34 @@ def evalAll(data_folder, model_names, cvFold=5):
 
 			model_data = model_data.loc[ori.index, genes]
 			#model_data = np.log2(model_data + 1)
-
 			t3 = time()
 			print("[Fold %d, %s] Model data loading elapsed %.1f seconds." %(seed, model_name, t3-t2))
 			model_perf_df = evalSlide(ori, mask, ho, model_data, model_name)
 			t4 = time()
 			print("[Fold %d, %s] Slide-level performance evaluation elapsed %.1f seconds." %(seed, model_name, t4-t3))
-			spot_perf_df = evalSpot(ori, mask, meta, model_data, model_name)
-			t5 = time()
-			print("[Fold %d, %s] Spot-level  performance evaluation elapsed %.1f seconds." %(seed, model_name, t5-t4))
-			gene_perf_df = evalGene(ori, mask, ho,  meta, model_data, model_name)
-			t6 = time()
-			print("[Fold %d, %s] Gene-level  performance evaluation elapsed %.1f seconds." %(seed, model_name, t6-t5))
 			model_perf_df['cvFold'] = seed
 			model_perf_dfs.append(model_perf_df)
-			spot_perf_df['cvFold'] = seed
-			spot_perf_dfs.append(spot_perf_df)
-			gene_perf_df['cvFold'] = seed
-			gene_perf_dfs.append(gene_perf_df)
+			
+			if not slideonly:
+				spot_perf_df = evalSpot(ori, mask, meta, model_data, model_name)
+				t5 = time()
+				print("[Fold %d, %s] Spot-level  performance evaluation elapsed %.1f seconds." %(seed, model_name, t5-t4))
+				gene_perf_df = evalGene(ori, mask, ho,  meta, model_data, model_name)
+				t6 = time()
+				print("[Fold %d, %s] Gene-level  performance evaluation elapsed %.1f seconds." %(seed, model_name, t6-t5))
+				spot_perf_df['cvFold'] = seed
+				spot_perf_dfs.append(spot_perf_df)
+				gene_perf_df['cvFold'] = seed
+				gene_perf_dfs.append(gene_perf_df)
 
 	model_perf_dfs = pd.concat(model_perf_dfs)
-	spot_perf_dfs = pd.concat(spot_perf_dfs)
-	gene_perf_dfs = pd.concat(gene_perf_dfs)
-	return model_perf_dfs, spot_perf_dfs, gene_perf_dfs
-	# return model_perf_dfs
+	model_perf_dfs.to_csv(os.path.join(data_folder, "slide_level_results.csv"))
+	if not slideonly:
+		spot_perf_dfs = pd.concat(spot_perf_dfs)
+		gene_perf_dfs = pd.concat(gene_perf_dfs)
+		spot_perf_dfs.to_csv(os.path.join(data_folder, "spot_level_results.csv"))
+		gene_perf_dfs.to_csv(os.path.join(data_folder, "gene_level_results.csv"))
+
 
 def eval_LCN_runner(param):
 	dn, fd = param
@@ -229,7 +234,7 @@ def LCN_captured_spots(folder, fd):
 	return spots
 
 ### Main
-def main(data_folder):
+def main(data_folder, cvFold):
 	## create a performance folder to save results if not exists
 	perf_folder = os.path.join(data_folder, "performance")
 	if not os.path.exists(perf_folder):
@@ -238,20 +243,24 @@ def main(data_folder):
 	#model_names = ["spImpute","mcImpute"]
 	## get performance
 #	slidePerf = evalAll(data_folder, model_names, 5)
-	slidePerf, spotPerf, genePerf = evalAll(data_folder, model_names, 5)
+	evalAll(data_folder, model_names, cvFold)
 	## save performance
-	slidePerf.to_csv(os.path.join(perf_folder, "slide_level_results.csv"))
-	spotPerf.to_csv(os.path.join(perf_folder, "spot_level_results.csv"))
-	genePerf.to_csv(os.path.join(perf_folder, "gene_level_results.csv"))
+
 
 if __name__ == "__main__":
-	proj_dir = "/houston_20t/alexw/ST/data/holdout_test/logMedian"
-	dns = ["MouseWT", "MouseAD", "Melanoma", "Prostate"]
-#	dns = ['Melanoma']
-	for dn in dns:
-		dataDir = join(proj_dir, dn)
-		main(dataDir)
-		print(dataDir)
+# 	proj_dir = "/houston_20t/alexw/ST/data/holdout_test/logMedian"
+# 	dns = ["MouseWT", "MouseAD", "Melanoma", "Prostate"]
+# #	dns = ['Melanoma']
+# 	for dn in dns:
+# 		dataDir = join(proj_dir, dn)
+# 		main(dataDir)
+# 		print(dataDir)
+	dataDir = sys.argv[1]
+	if len(sys.argv) > 2:
+		cvFold = int(sys.argv[2])
+	else:
+		cvFold = 5
+	main(dataDir, cvFold)
 
 
 

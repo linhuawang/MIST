@@ -170,6 +170,7 @@ def evalAll(data_folder, model_names, slideonly=True, cvFold=5):
 				gene_perf_dfs.append(gene_perf_df)
 
 	model_perf_dfs = pd.concat(model_perf_dfs)
+	print(model_perf_dfs)
 	model_perf_dfs.to_csv(os.path.join(data_folder, "slide_level_results.csv"))
 	if not slideonly:
 		spot_perf_dfs = pd.concat(spot_perf_dfs)
@@ -243,7 +244,7 @@ def main(data_folder, cvFold):
 	#model_names = ["spImpute","mcImpute"]
 	## get performance
 #	slidePerf = evalAll(data_folder, model_names, 5)
-	evalAll(data_folder, model_names, cvFold)
+	evalAll(data_folder, model_names, cvFold=cvFold)
 	## save performance
 
 

@@ -138,7 +138,7 @@ def evalAll(data_folder, model_names, cvFold=5):
 			t2 = time()
 			#fn = os.path.join(data_folder, "%s_raw_%d.csv" %(model_name, seed))
 			fn = os.path.join(data_folder, "%s_%d.csv" %(model_name, seed))
-			if model == "spImpute":
+			if model_name == "spImpute":
 				fn = glob(os.path.join(data_folder, "%s_*_%d.csv" %(model_name, seed)))[0]
 			model_data = pd.read_csv(fn, index_col=0)
 			## SAVER imputed by R language, - became . in the header

@@ -30,9 +30,9 @@ def spImpute(data_obj, nExperts=10, plot=False, verbose=1): # multiprocessing no
 	cor_mat = data_obj.cormat
 	#nodes = construct_graph(meta, radius)
 	ccs = spatialCCs(nodes, cor_mat, epsilon, merge=0)
-	true_zeros = utils.get_true_zeros(data, meta, ccs) ## remove effect of overimputation
-	true_zeros = true_zeros.loc[data.index, data.columns]
-	zero_idx = np.where(true_zeros.values)
+	# true_zeros = utils.get_true_zeros(data, meta, ccs) ## remove effect of overimputation
+	# true_zeros = true_zeros.loc[data.index, data.columns]
+	# zero_idx = np.where(true_zeros.values)
 
 	n1 = float(sum([len(cc) for cc in ccs if len(cc) > 5]))
 	if verbose == 1:
@@ -82,7 +82,7 @@ def spImpute(data_obj, nExperts=10, plot=False, verbose=1): # multiprocessing no
 
 	assert np.all(data.values[known_idx] > 0)
 	imputed.values[known_idx] = data.values[known_idx]
-	imputed.values[zero_idx] = data.values[zero_idx] # remove overimputation effect
+	#imputed.values[zero_idx] = data.values[zero_idx] # remove overimputation effect
 	if plot:
 		return imputed, member_df
 	else:
@@ -207,14 +207,14 @@ if __name__ == "__main__":
                     help='threshold to filter low confident edges')
 	parser.add_argument('-o', '--out_fn', type=str, default='none',
                     help='File path to save the imputed values.')
-	parser.add_argument('-l', '--norm', type=str, default="none",
+	parser.add_argument('-l', '--norm', type=str, default="cpm",
                     help='method to normalize data.')
 	parser.add_argument('-s', '--select', type=int, default=1,
 					help = 'whether infer epislon using holdout test or not.')
 	parser.add_argument('-r', '--radius', type=int, default=2,
 					help='distance radius in defining edges')
-	parser.add_argument('-m', '--merge', type=int, default=5,
-                                        help='distance radius in defining edges')
+	# parser.add_argument('-m', '--merge', type=int, default=5,
+ #                                        help='distance radius in defining edges')
 	
 	args = parser.parse_args()
 	count_fn = args.countpath
@@ -223,13 +223,30 @@ if __name__ == "__main__":
 	norm = args.norm
 	select = args.select
 	radius = args.radius
-	merge = args.merge
+	# merge = args.merge
 
-	data = Data.Data(countpath=count_fn,radius=radius,
-					merge=merge,norm=norm, epsilon=epi)
+	raw, meta = utils.read_ST_data(count_fn)
+	genes = raw.columns[((raw > 2).sum() >= 2)]
+
+	raw, libsize = utils.data_norm(raw, norm)
+	impute_input = raw.loc[:, genes]
+	print(impute_input.shape)
+	data = Data.Data(count=impute_input, meta=meta,radius=radius,
+					epsilon=epi)
+
 	imputed, member_df = main(data, select=select, plot=True)
+
+	imputed_final = raw.copy()
+	imputed_final.loc[imputed.index, imputed.columns] = imputed.values
+	imputed_revNorm = utils.data_denorm(imputed_final, libsize=libsize, method=norm)
 
 	if out_fn != "none":
 		imputed.to_csv(out_fn)
+		complete_fn = out_fn.split(".csv")[0] + "_complete.csv"
+		imputed_final.to_csv(complete_fn)
+
+		raw_fn = out_fn.split(".csv")[0] + "_rawCount.csv"
+		imputed_revNorm.to_csv(raw_fn)
+
 		member_out = out_fn.split(".csv")[0] + "_cluster_info.csv"
 		member_df.to_csv(member_out)

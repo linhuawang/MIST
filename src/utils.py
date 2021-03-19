@@ -33,8 +33,8 @@ def get_true_zeros(count, meta, ccs):
 
     dist_sim = dist_sim.div(dist_sim.sum(axis=1), axis=0)
     truezero_map = dist_sim @ zero_map
-    truezero_map[truezero_map <= 0.5] = 0
-    truezero_map[truezero_map > 0.5] = 1
+    truezero_map[truezero_map <= 0.8] = 0
+    truezero_map[truezero_map > 0.8] = 1
     truezero_map[count > 0] = 0
     return truezero_map
 
@@ -76,9 +76,12 @@ def data_norm(data, method='cpm'):
         data = data.apply(lambda x: x * (10 ** 6)/ x.sum() , axis=1).astype(int)
     return data, libsize
 
-def data_denorm(data, libfile, method):
+def data_denorm(data, libsize, method, libfile=None):
     assert method in ['none','median', 'cpm', 'logCPM', 'logMed']
-    libsize = pd.read_csv(libfile, index_col=0)
+
+    if libfile != None:
+        libsize = pd.read_csv(libfile, index_col=0)
+
     libsize = libsize.loc[data.index,:] # n*1
     count = data.copy() # n*p
 

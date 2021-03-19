@@ -15,6 +15,7 @@ from os.path import join
 import Data
 from neighbors import spatialCCs
 from multiprocessing import Pool
+from glob import glob
 ## Evaluate spot level performance for holdout test at log2 scale
 def evalSpot(ori, mask, meta, model_data, model_name):
 	spots = mask.index[(mask == 1).any(axis=1)]
@@ -126,7 +127,8 @@ def evalAll(data_folder, model_names, cvFold=5):
 		genes = mask.columns.tolist()
 		ho = pd.read_csv("%s/ho_data_%d.csv" %(data_folder, seed), index_col=0)
 		ho = ho.loc[mask.index, genes]
-		ori, meta = utils.read_ST_data("%s/raw.csv" %data_folder)
+		#ori, meta = utils.read_ST_data("%s/raw.csv" %data_folder)
+		ori, meta = utils.read_ST_data("%s/norm.csv" %data_folder)
 
 		t1 = time()
 		print("[Fold %d] Ground truth data loading elapsed %.1f seconds." %(seed, t1 - st))
@@ -134,7 +136,10 @@ def evalAll(data_folder, model_names, cvFold=5):
 		#ori = np.log2(ori + 1) #CPM to logCPM
 		for model_name in model_names:
 			t2 = time()
-			fn = os.path.join(data_folder, "%s_raw_%d.csv" %(model_name, seed))
+			#fn = os.path.join(data_folder, "%s_raw_%d.csv" %(model_name, seed))
+			fn = os.path.join(data_folder, "%s_%d.csv" %(model_name, seed))
+			if model == "spImpute":
+				fn = glob(os.path.join(data_folder, "%s_*_%d.csv" %(model_name, seed)))[0]
 			model_data = pd.read_csv(fn, index_col=0)
 			## SAVER imputed by R language, - became . in the header
 			if model_name == "SAVER":
@@ -241,8 +246,8 @@ def main(data_folder):
 
 if __name__ == "__main__":
 	proj_dir = "/houston_20t/alexw/ST/data/holdout_test/logMedian"
-#	dns = ["MouseWT", "MouseAD", "Melanoma", "Prostate"]
-	dns = ['Melanoma']
+	dns = ["MouseWT", "MouseAD", "Melanoma", "Prostate"]
+#	dns = ['Melanoma']
 	for dn in dns:
 		dataDir = join(proj_dir, dn)
 		main(dataDir)

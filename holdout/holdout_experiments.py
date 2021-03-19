@@ -21,6 +21,7 @@ if __name__ == '__main__':
 	for i in range(5):
 		fn = os.path.join(folder, "ho_data_%d.csv" %i)
 		data = Data.Data(countpath=fn, radius=radius, merge=merge)
+		
 		for imputer_name in ["MAGIC", "knnSmooth", "mcImpute", "spKNN", "spImpute"]:
 			norm_outF = os.path.join(folder, "%s_%d.csv" %(imputer_name, i))
 			raw_outF = os.path.join(folder, "%s_raw_%d.csv" %(imputer_name, i))

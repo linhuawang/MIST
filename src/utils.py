@@ -185,22 +185,29 @@ def generate_cv_masks(original_data, genes, k=2):
     ho_mask = pd.DataFrame(columns = original_data.columns,
                                 index = original_data.index,
                                 data = np.zeros(original_data.shape))
+
     # make templates for masks and ho data for k fold cross validation
     ho_masks = [ho_mask.copy() for i in range(k)]
     ho_dsets = [original_data.copy() for i in range(k)]
+    gene_sparsity = (original_data!=0).sum().divide(original_data.shape[0])
+    genes = gene_sparsity[gene_sparsity >=  0.4].index.tolist()
+
     # for each gene, crosss validate
     for gene in genes:
         nonzero_spots = original_data.index[original_data[gene] > 0].tolist()
         np.random.shuffle(nonzero_spots)
         nspots = len(nonzero_spots)
         foldLen = int(nspots/k)
+
         for i in range(k):
             if i != (k-1):
                 spot_sampled = nonzero_spots[i*foldLen: (i+1)*foldLen]
             else:
                 spot_sampled = nonzero_spots[i*foldLen: ]
+                
             ho_masks[i].loc[spot_sampled, gene] = 1
             ho_dsets[i].loc[spot_sampled, gene] = 0
+
     return ho_dsets, ho_masks
 
 

@@ -16,7 +16,7 @@
 
 ## Run example experiments
 
-    python3 spImpute.py -f test_data/raw.csv -o test_data/imputed.csv -l cpm 
+    python3 spImpute.py -f test_data/raw.csv -o test_data/imputed.csv -l cpm -n 4
 
   ### Visualize major tissue components
   

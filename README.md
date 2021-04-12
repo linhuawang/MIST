@@ -18,7 +18,7 @@
 
     python3 spImpute.py -f test_data/raw.csv -o test_data/imputed.csv -l cpm 
 
-  ### visualize major tissue components
+  ### Visualize major tissue components
   
     python3 visualize_components.py test_data/imputed_cluster_info.csv test_data/cluster.png
     

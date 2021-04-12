@@ -257,11 +257,12 @@ if __name__ == "__main__":
 
 	if out_fn != "none":
 		imputed.to_csv(out_fn)
+		# include genes and spots that were filtered out
 		complete_fn = out_fn.split(".csv")[0] + "_complete.csv"
 		imputed_final.to_csv(complete_fn)
-
+		# de-normalize to raw counts
 		raw_fn = out_fn.split(".csv")[0] + "_rawCount.csv"
 		imputed_revNorm.to_csv(raw_fn)
-
+		# save cluster information
 		member_out = out_fn.split(".csv")[0] + "_cluster_info.csv"
 		member_df.to_csv(member_out)

@@ -1,4 +1,4 @@
-# SPatial transcriptomics imputation (spImpute)
+# Missing value Imputation for Spatially resolved Transcriptomics (MIST)
 
 ## Required dependencies
 

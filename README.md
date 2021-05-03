@@ -22,7 +22,7 @@
   * -f: path to the input raw count matrix (csv).
   * -o: path to save the imputed data sets.
 
-  ### Parameters affecting imputation values
+  ### Model Parameters
   * -r: radius in Euclidean distance to consider as adjacent spots.
   * -s: whether to select thresholding parameter epsilon automatically or not. 0: no selection, use fixed. 1: select automatically.
   * -e: edge filtering parameter epsilon, range from 0 to 1. Only useful when -s was set to 0.

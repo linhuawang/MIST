@@ -1,11 +1,19 @@
+#!/usr/bin/env python
+"""Visualizing the spatial clustermembership of MIST detected regions
+"""
 import pandas as pd
 from matplotlib import pyplot as plt
 import sys
 
-component_fn = sys.argv[1]
-outfn = sys.argv[2]
-component_df = pd.read_csv(component_fn, index_col=0)
+__author__ = "Linhua Wang"
+__license__ = "GNU General Public License v3.0"
+__maintainer__ = "Linhua Wang"
+__email__ = "linhuaw@bcm.edu"
 
+component_fn = sys.argv[1] # clustermembership file path (MIST returned)
+outfn = sys.argv[2] # figure path to save to
+
+component_df = pd.read_csv(component_fn, index_col=0)
 f, ax1 = plt.subplots(ncols=1, nrows=1, figsize=(4,4))
 
 img1 = ax1.scatter(x=component_df.x.to_numpy(),

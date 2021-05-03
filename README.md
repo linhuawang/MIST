@@ -29,17 +29,27 @@
   * -l: normalization method. Must be one of "cpm", "logCPM", "logMed", "none". Default is "cpm".
 
   ### Other parameters
-  * -n: number of processors to be used for parallel computing.
+  * -n: number of processors to be used for parallel computing. 1-10. Default is 1. 
 
 ## Run example experiments
   
   The following code will impute the test data with 4 processors, save the imputed cpm data, raw data to the designated folder. Also, the component information will be saved to the same folder.
   
-    python3 spImpute.py -f test_data/raw.csv -o test_data/imputed.csv -l cpm -n 4
+    python3 MIST.py -f test_data/raw.csv -o test_data/imputed.csv -l cpm -n 4
+
+  After running the above code, the following files will be generated:
+
+    1. test_data/imputed.csv -- imputed, normalized, gene filtered expression.
+    2. test_data/imputed_complete.csv -- imputed, normalized, gene expression.
+    3. test_data/imputed_rawCount.csv -- imputed, raw gene counts.
+    4. imputed_cluster_info.csv -- region assignment of every spot.
 
   ### Visualize major tissue components
   
   The following code will take component information returned by the imputation pipeline and visualize the component information.
   
     python3 visualize_components.py test_data/imputed_cluster_info.csv test_data/cluster.png
-    
+  
+  The above code will visualize the detected regions by giving a figure like:
+
+  [Cluster Visualization](test_data/output/cluster.png)

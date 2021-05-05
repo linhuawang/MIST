@@ -115,7 +115,7 @@ def MIST(data_obj, nExperts=10, ncores=1, verbose=1):
 			else: 
 				# Sequential computing
 				ensemble_outputs = []
-				for i2 in trange(nExperts):
+				for i2 in range(nExperts):
 					sampled_spot = list(np.random.choice(other_spots, s, replace=False))
 					ri_spots = cc_spots + sampled_spot
 					ensemble_outputs.append(rankMinImpute(data.loc[ri_spots,:]))
@@ -188,7 +188,7 @@ def softThreshold(s, l):
 	return np.multiply(np.sign(s), np.absolute(s - l))
 
 
-def ep_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold):
+def ep_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold, ncores=1):
 	"""
 	Method to evaluate epsilon determined imputation results.
 	"""
@@ -201,11 +201,13 @@ def ep_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold):
 	# update to the holdout object to save computational time
 	ho_data_obj.update_refData(imp_whole)
 
-	# save epsilon determined imputation performance 
+	# save epsilon determined imputation performance
+	if ncores > 5:
+		ncores = 5
 	perf_dfs = []
 	for ep in eps:
 		ho_data_obj.update_ep(ep) # update epsilon
-		model_data,_ = MIST(ho_data_obj, nExperts=5, verbose=0) # impute
+		model_data,_ = MIST(ho_data_obj, nExperts=5, verbose=0, ncores=ncores) # impute
 		perf_df = utils.evalSlide(ori_data, ho_mask, ho_data, model_data, ep) # evaluate
 		perf_dfs.append(perf_df)
 	perf_dfs = pd.concat(perf_dfs)
@@ -213,7 +215,7 @@ def ep_perf(ho_data, ho_mask, meta_data, ori_data, cor_mat, cv_fold):
 	perf_dfs["cv_fold"] = cv_fold
 	return perf_dfs
 
-def select_ep(original_data, meta_data, cor_mat, thre=0.8, k=5):
+def select_ep(original_data, meta_data, cor_mat, thre=0.8, k=2, ncores=1):
 	"""
 	Method to automatically select optimal epsilon. 
 
@@ -242,7 +244,7 @@ def select_ep(original_data, meta_data, cor_mat, thre=0.8, k=5):
 	perf_dfs = []
 	for fd in range(k):
 		ho_data, ho_mask = ho_dsets[fd], ho_masks[fd]
-		perf_df = ep_perf(ho_data, ho_mask, meta_data, training_data, cor_mat, fd)
+		perf_df = ep_perf(ho_data, ho_mask, meta_data, training_data, cor_mat, fd, ncores)
 		perf_dfs.append(perf_df)
 	perf_dfs = pd.concat(perf_dfs)
 	rmse_dfs = perf_dfs.loc[:, ["ModelName", "RMSE"]]
@@ -278,7 +280,7 @@ def main(data, ncores=1, select=1):
 	ep = data.epsilon
 	if select == 1:
 		# Automatically select epsilon value
-		ep = select_ep(count, meta, cormat)
+		ep = select_ep(count, meta, cormat, ncores=ncores)
 		data.update_ep(ep)	
 	end_time = time()
 	print("Epsilon %.2f selected in %.2f seconds." %(ep, end_time-start_time))	

@@ -245,6 +245,36 @@ def spatialCCs(nodes, cor_mat, epi, merge=0):
 		ccs.append(list(cnns))
 		## Remove nodes in current CC from remaining Node list
 		nodes = removeNodes(nodes, cnns)
+
+	if merge > 0:
+		k = 1
+		small_nodes = []
+		largeCCs = []
+		for cc in ccs:
+			if len(cc) <= merge:
+				for node in cc:
+					small_nodes.append(node)
+			else:
+				largeCCs.append(CC(cc, k))
+				k += 1
+
+		if len(largeCCs) == 0:
+			return [small_nodes]
+
+		merge_dict = {}
+		for small_node in small_nodes:
+			dist = np.Inf
+			idx = 0
+			for i in range(len(largeCCs)):
+				if largeCCs[i].distance(small_node) < dist:
+					dist = largeCCs[i].distance(small_node)
+					idx = i
+			#largeCCs[idx].append(small_node)
+			merge_dict[small_node.name] = idx
+		for small_node in small_nodes:
+			largeCCs[merge_dict[small_node.name]].append(small_node)
+		return [largeCC.nodes for largeCC in largeCCs]
+		
 	return ccs
 
 

@@ -5,6 +5,8 @@
 import neighbors
 import utils
 import pandas as pd
+import sys
+sys.setrecursionlimit(10000)
 
 __author__ = "Linhua Wang"
 __license__ = "GNU General Public License v3.0"

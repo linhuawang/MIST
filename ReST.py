@@ -57,6 +57,7 @@ class ReST(object):
 			adata.var["mt"] = adata.var_names.str.startswith("mt-")
 		else:
 			print("Please pass a valid species name from ['Human', 'Mouse'].")
+		self.species = species
 
 		sc.pp.calculate_qc_metrics(adata, qc_vars=["mt"], inplace=True)
 		counts = adata.obs.total_counts.to_numpy()
@@ -346,6 +347,7 @@ class ReST(object):
     		color="log2(Odds-ratio)", palette='viridis', col='region',
             kind='bar',  col_wrap=3)
 			plt.show()
+			return fig
 
 	def plot_region_volcano(self, ncols=None, nrows=None):
 		region_deg_results = self.region_deg_results
@@ -477,4 +479,33 @@ class ReST(object):
 		ax.axis('off')
 		plt.close()
 		return f
+	
+	def generate_process_report(self, outfolder = 'none', ):
+		import joblib
+		if not os.path.exists outfolder:
+			os.mkdir(outfolder)
 
+		import matplotlib.backends.backend_pdf
+		pdf = matplotlib.backends.backend_pdf.PdfPages(f"{outfolder}/region_detection_report.pdf")
+		self.extract_regions(min_sim = 0.1, min_region=40,
+                   gap=0.02, sigma=2, region_min=2)
+		pdf.savefig(self.thr_opt_fig)
+
+		# Plot region boundaries
+    	self.assign_region_colors() ## assign a color to each region by default
+    	f0 = self.plot_region_boundaries(by='UMI')
+		pdf.savefig(f0)
+
+		# plot regional markers
+		self.extract_regional_markers(mode='all')
+		f1 = self.plot_region_volcano()
+		pdf.savefig(f1)
+
+		# plot gsea results
+		self.runGSEA(mode='all', species=self.species, 
+           gene_sets="GO_Biological_Process_2021")
+    	f2 = self.plot_region_enrichment(top=3)
+		pdf.savefig(f2)
+
+		pdf.close()
+		joblib.dump(self, f'{outfolder}/ReST.job')

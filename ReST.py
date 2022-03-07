@@ -422,12 +422,13 @@ class ReST(object):
 			
 			if region_colors != None:
 				c = region_colors[region]
-			ax.scatter(xs, ys , color=c, alpha=0.2, s=50)
+
 			alpha_shape = alphashape(points, alpha)
 			if by == 'UMI':
 				ax.add_patch(PolygonPatch(alpha_shape, fc='none',
 									  ec=c, linewidth=3))
 			else:
+				ax.scatter(xs, ys , color=c, alpha=0.2, s=50)
 				ax.add_patch(PolygonPatch(alpha_shape, fc=c, alpha=0.5,
 									  ec=c, linewidth=3))
 		ax.axis('off')

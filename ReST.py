@@ -392,7 +392,7 @@ class ReST(object):
 			ncores=ncores, nExperts=nExperts, nodes=nodes)
 		return imputed_data
 
-	def plot_region_boundaries(self, region_colors = None):
+	def plot_region_boundaries(self, region_colors = None, by='UMI'):
 		radius = 2
 		alpha = 1 / (radius-0.1)
 
@@ -403,7 +403,13 @@ class ReST(object):
 		regions = list(regions)
 		
 		xs, ys = region_df.array_row.tolist(), region_df.array_col.tolist()
-		ax.scatter(xs, ys , color="lightgray", s=50)
+
+		if by == 'UMI':
+			sns.scatterplot(data=region_df, x='array_row', 
+					y='array_col', hue='total_counts', palette='Reds', ax = ax)
+		else:
+			ax.scatter(xs, ys , color="lightgray", s=50)
+
 		points = [[x,y] for x, y in zip(xs, ys)]
 
 		if region_colors is None:
@@ -418,7 +424,11 @@ class ReST(object):
 				c = region_colors[region]
 			ax.scatter(xs, ys , color=c, alpha=0.2, s=50)
 			alpha_shape = alphashape(points, alpha)
-			ax.add_patch(PolygonPatch(alpha_shape, fc=c, alpha=0.5,
+			if by == 'UMI':
+				ax.add_patch(PolygonPatch(alpha_shape, fc='none',
+									  ec=c, linewidth=3))
+			else:
+				ax.add_patch(PolygonPatch(alpha_shape, fc=c, alpha=0.5,
 									  ec=c, linewidth=3))
 		ax.axis('off')
 		plt.close()

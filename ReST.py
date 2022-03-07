@@ -83,7 +83,7 @@ class ReST(object):
 		self.adata=adata
 
 	def extract_regions(self, min_sim=0.5, max_sim=0.91,
-					 gap=0.05, min_region=40, sigma=1):
+					 gap=0.05, min_region=40, sigma=1, region_min=3):
 
 		warnings.filterwarnings('ignore')
 
@@ -105,7 +105,8 @@ class ReST(object):
 		print(f"MIST Data created in {(t2-t11):.2f} seconds.")
 		results = select_epsilon(count_data, min_sim=min_sim, 
 												max_sim=max_sim, gap=gap, 
-												min_region=min_region, sigma=1)
+												min_region=min_region, 
+												sigma=1, region_min=region_min)
 
 		self.thr_opt_fig = results['thre_figure']
 		sample_regions = results['region_df']

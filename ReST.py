@@ -346,7 +346,6 @@ class ReST(object):
 			sns.catplot(data=region_dfs, x='-log10(P-adjust)', y="Term", 
     		color="log2(Odds-ratio)", palette='viridis', col='region',
             kind='bar',  col_wrap=3)
-			plt.show()
 			return fig
 
 	def plot_region_volcano(self, ncols=None, nrows=None):

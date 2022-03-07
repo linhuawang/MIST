@@ -41,4 +41,6 @@ def generate_process_report(input_folder, output_folder = 'none',
     pdf.savefig(f2)
 
     pdf.close()
-    joblib.dump(rd, f'{output_folder}/ReST.job')
+    # joblib.dump(rd, f'{output_folder}/ReST.job')
+    region_deg_df = rd.region_deg_results
+    region_deg_df.to_csv(f"{output_folder}/regional_marker_df.csv")

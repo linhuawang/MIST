@@ -342,11 +342,11 @@ class ReST(object):
 				facet_col="region", height=800, width=1600)
 			fig.show()
 		else:
-			fig = plt.figure(figsize=(20, 10))
+			f = plt.figure(figsize=(10, 5))
 			sns.catplot(data=region_dfs, x='-log10(P-adjust)', y="Term", 
     		color="log2(Odds-ratio)", palette='viridis', col='region',
-            kind='bar',  col_wrap=3)
-			return fig
+            kind='bar')
+			return f
 
 	def plot_region_volcano(self, ncols=None, nrows=None):
 		region_deg_results = self.region_deg_results

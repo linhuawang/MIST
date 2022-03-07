@@ -136,14 +136,15 @@ def obj_scores(ccs, cormat, min_region=5, sigma=1, region_min=3):
         return 1
     return scores
 
-def select_epsilon(data, min_sim=0.4, max_sim=0.91, gap=0.02, min_region=5, sigma=1):
+def select_epsilon(data, min_sim=0.4, max_sim=0.91, gap=0.02, 
+        min_region=5, sigma=1, region_min=3):
     st = time()
     eps = np.arange(min_sim, max_sim, gap)
     scores = []
     for i in trange(len(eps)):
         ep = eps[i]
         _, ccs = region_assign(data, ep,min_region)
-        score = obj_scores(ccs, data.cormat, min_region, sigma)
+        score = obj_scores(ccs, data.cormat, min_region, sigma, region_min)
         scores.append(score)
     
     ind = np.argmin(scores)

@@ -264,16 +264,19 @@ class ReST(object):
 							gene_sets='GO_Biological_Process_2021',
 							organism=species)
 			res = res.res2d
-			res = res.sort_values("Combined Score")
-			res = res.loc[res['Adjusted P-value'] <= 0.05]
+			res = res.sort_values("Odds Ratio")
+			res_sig = res.loc[res['Adjusted P-value'] <= 0.05]
 
-			if not res.empty:
-				assigned_name = f"{res.Term.tolist()[0]} ({region_markers[0]})"
+			if not res_sig.empty:
+				assigned_name = f"{res_sig.Term.tolist()[0]} ({region_markers[0]})"
 			else:
-				assigned_name = ', '.join(region_markers[0: np.min(5, len(region_markers))])
+				assigned_name = ', '.join(region_markers[0: np.min([3, len(region_markers)])])
 
 			region_names[region] = assigned_name
-			region_gsea_dict[region] = res
+			if not res_sig.empty:
+				region_gsea_dict[region] = res_sig
+			else:
+				region_gsea_dict[region] = res.iloc[:10, :]
 
 		self.auto_region_names = region_names
 		self.region_enrichment_result = region_gsea_dict

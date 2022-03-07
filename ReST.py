@@ -228,10 +228,10 @@ class ReST(object):
 		if mode not in ['all', 'mutual']:
 			print("Either mode 'all' or 'mutual' is accepted.")
 			sys.exit(0)
-		
 
-		if gene_sets is not None:
-			gene_sets = ['GO_Biological_Process_2021']
+		if gene_sets is None:
+			gene_sets = ['GO_Biological_Process_2021', 'GO_Molecular_Function_2021',
+			 'GO_Cellular_Component_2021',  f'KEGG_2019_{species}']
 
 		if species not in ['Mouse', 'Human']:
 			print(f"GSEA not supported for species {species}. Only 'Human' or 'Mouse' is accepted.")
@@ -262,7 +262,7 @@ class ReST(object):
 				region_markers = list(region_markers)
 
 			res = gp.enrichr(gene_list= region_markers, 
-							gene_sets='GO_Biological_Process_2021',
+							gene_sets=gene_sets,
 							organism=species)
 			res = res.res2d
 			res = res.sort_values("Odds Ratio")

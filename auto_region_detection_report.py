@@ -35,10 +35,12 @@ def generate_process_report(input_folder, output_folder = 'none',
     pdf.savefig(f1)
 
     # plot gsea results
-    rd.runGSEA(mode='all', species=rd.species, 
-        gene_sets="GO_Biological_Process_2021")
-    f2 = rd.plot_region_enrichment(top=3)
-    pdf.savefig(f2)
+    try:
+        rd.runGSEA(mode='all', species=rd.species)
+        f2 = rd.plot_region_enrichment(top=3)
+        pdf.savefig(f2)
+    except:
+        pass
 
     pdf.close()
     # joblib.dump(rd, f'{output_folder}/ReST.job')

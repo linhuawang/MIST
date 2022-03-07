@@ -61,7 +61,8 @@ class ReST(object):
 
 		sc.pp.calculate_qc_metrics(adata, qc_vars=["mt"], inplace=True)
 		counts = adata.obs.total_counts.to_numpy()
-		min_count = np.percentile(counts, 2)
+		min_count = np.max([np.percentile(counts, 5), 1500])
+		print(f'Filtering spots with less than {min_count} UMIs.')
 		if filter_spot:
 			sc.pp.filter_cells(adata, min_counts=min_count)
 		#sc.pp.filter_cells(adata, max_counts=max_count)

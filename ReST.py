@@ -48,7 +48,7 @@ class ReST(object):
 		self.auto_region_names = None
 		self.region_enrichment_result = None
 		self.region_color_dict = None
-		
+
 	def shallow_copy(self):
 		rd2 = ReST(adata=self.adata.copy())
 		return rd2
@@ -451,7 +451,9 @@ class ReST(object):
 		plt.close()
 		return f
 
-	def visualize_gene_expr(self, gene, region_colors = None, gcmap='Reds'):
+	def visualize_gene_expr(self, gene, region_colors = None,
+				 gcmap='Reds', vmin=None, vmax = None):
+
 		radius = 2
 		alpha = 1 / (radius-0.1)
 		f , ax = plt.subplots(nrows=1, ncols=1, figsize=(7, 6))
@@ -468,7 +470,12 @@ class ReST(object):
 		s = 50
 		if self.adata.shape[0] > 1000:
 			s = 30
-		sc = ax.scatter(xs, ys, c=gexpr, s=s, cmap=gcmap)
+
+		if vmin is not None and vmax is not None:
+			sc = ax.scatter(xs, ys, c=gexpr, s=s, cmap=gcmap, vmin=vmin, vmax=vmax)
+		else:
+			sc = ax.scatter(xs, ys, c=gexpr, s=s, cmap=gcmap)
+
 		plt.colorbar(sc)
 
 		if region_colors is None:

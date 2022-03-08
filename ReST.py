@@ -25,14 +25,14 @@ class ReST(object):
 		# super(ClassName, self).__init__()
 		if path != None:
 			adata = sc.read_visium(path)
-			self.shape = self.adata.shape
+			self.shape = adata.shape
 		elif (counts is not None) and (coordinates is not None) and (gene_df is not None):
 			adata = ad.AnnData(X=csr_matrix(counts.values), obs=coordinates, var=gene_df)
-			self.shape = self.adata.shape
+			self.shape = adata.shape
 		elif adata is not None:
 			adata.X = csr_matrix(adata.X)
 			adata = adata
-			self.shape = self.adata.shape
+			self.shape = adata.shape
 		else:
 			adata = None
 			self.shape = None

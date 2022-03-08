@@ -141,7 +141,8 @@ class ReST(object):
 
 	def assign_region_colors(self, region_colors = None):
 		regions = set(self.adata.obs.region_ind)
-		regions.remove("isolated")
+		if 'isolated' in regions:
+			regions.remove("isolated")
 
 		if region_colors is None:
 			colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple',
@@ -162,7 +163,8 @@ class ReST(object):
 	def extract_regional_markers(self, mode='all'):
 		adata = self.adata.copy()
 		regions = set(adata.obs.region_ind)
-		regions.remove('isolated')
+		if 'isolated' in regions:
+			regions.remove('isolated')
 		regions = list(regions)
 		genes = adata.var_names.tolist()
 
@@ -249,7 +251,8 @@ class ReST(object):
 			return
 
 		region_inds = set(self.adata.obs.region_ind)
-		region_inds.remove("isolated")
+		if 'isolated' in region_inds:
+			region_inds.remove("isolated")
 		region_inds = list(region_inds)
 		region_names = {'isolated': 'Others'}
 		region_gsea_dict = {}
@@ -415,7 +418,8 @@ class ReST(object):
 		f , ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 6))
 		region_df = self.adata.obs
 		regions = set(region_df.region_ind)
-		regions.remove('isolated')
+		if 'isolated' in regions:
+			regions.remove('isolated')
 		regions = list(regions)
 		
 		xs, ys = region_df.array_row.tolist(), region_df.array_col.tolist()
@@ -459,7 +463,10 @@ class ReST(object):
 		f , ax = plt.subplots(nrows=1, ncols=1, figsize=(7, 6))
 		region_df = self.adata.obs
 		regions = set(region_df.region_ind)
-		regions.remove('isolated')
+
+		if "isolated" in regions:
+			regions.remove('isolated')
+
 		regions = list(regions)
 		
 		xs, ys = region_df.array_row.tolist(), region_df.array_col.tolist()

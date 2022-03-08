@@ -25,13 +25,17 @@ class ReST(object):
 		# super(ClassName, self).__init__()
 		if path != None:
 			adata = sc.read_visium(path)
+			self.shape = self.adata.shape
 		elif (counts is not None) and (coordinates is not None) and (gene_df is not None):
 			adata = ad.AnnData(X=csr_matrix(counts.values), obs=coordinates, var=gene_df)
+			self.shape = self.adata.shape
 		elif adata is not None:
 			adata.X = csr_matrix(adata.X)
 			adata = adata
+			self.shape = self.adata.shape
 		else:
 			adata = None
+			self.shape = None
 			print("Please use load() function to load data. Otherwise, no useful info. can be used.")
 			# print('Wrong data input. Either format of the following inputs are eligible:\n\
 			# 	\t 1. The out/ path from SpaceRanger results,\n\
@@ -39,13 +43,11 @@ class ReST(object):
 			# 	\t 3. A raw count matrix (numpy array), coordinates data frame, and gene information data frame.')
 		self.adata = adata
 		self.nodes = None
-		self.shape = self.adata.shape
-		
 		self.species = None
 		self.region_vAll_marker_dict = None
 		self.auto_region_names = None
 		self.region_enrichment_result = None
-		
+
 	def shallow_copy(self):
 		rd2 = ReST(adata=self.adata.copy())
 		return rd2

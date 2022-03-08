@@ -47,7 +47,8 @@ class ReST(object):
 		self.region_vAll_marker_dict = None
 		self.auto_region_names = None
 		self.region_enrichment_result = None
-
+		self.region_color_dict = None
+		
 	def shallow_copy(self):
 		rd2 = ReST(adata=self.adata.copy())
 		return rd2
@@ -520,4 +521,5 @@ class ReST(object):
 		self.region_vAll_marker_dict = atts['region_vAllmarker_dict']
 		self.auto_region_names = atts['auto_region_names']
 		self.region_enrichment_result = atts['region_enrichment_result']
+		self.region_color_dict = atts['region_color_dict']
 

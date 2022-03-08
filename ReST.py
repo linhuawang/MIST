@@ -464,8 +464,8 @@ class ReST(object):
 		
 		xs, ys = region_df.array_row.tolist(), region_df.array_col.tolist()
 		gexpr = self.adata[:, gene].layers['CPM'].toarray()
-		scaler = StandardScaler()
-		gexpr = np.ravel(scaler.fit_transform(gexpr))
+		# scaler = StandardScaler()
+		# gexpr = np.ravel(scaler.fit_transform(gexpr))
 
 		s = 50
 		if self.adata.shape[0] > 1000:

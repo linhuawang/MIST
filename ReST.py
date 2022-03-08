@@ -16,6 +16,7 @@ import os
 from sklearn.preprocessing import StandardScaler
 from alphashape import alphashape
 from descartes import PolygonPatch
+import joblib
 
 class ReST(object):
 	"""docstring for ClassName"""
@@ -30,15 +31,21 @@ class ReST(object):
 			adata.X = csr_matrix(adata.X)
 			adata = adata
 		else:
-			print('Wrong data input. Either format of the following inputs are eligible:\n\
-				\t 1. The out/ path from SpaceRanger results,\n\
-				\t 2. Raw AnnData,\n\
-				\t 3. A raw count matrix (numpy array), coordinates data frame, and gene information data frame.')
-			sys.exit(0)
+			adata = None
+			print("Please use load() function to load data. Otherwise, no useful info. can be used.")
+			# print('Wrong data input. Either format of the following inputs are eligible:\n\
+			# 	\t 1. The out/ path from SpaceRanger results,\n\
+			# 	\t 2. Raw AnnData,\n\
+			# 	\t 3. A raw count matrix (numpy array), coordinates data frame, and gene information data frame.')
 		self.adata = adata
 		self.nodes = None
 		self.shape = self.adata.shape
-
+		
+		self.species = None
+		self.region_vAll_marker_dict = None
+		self.auto_region_names = None
+		self.region_enrichment_result = None
+		
 	def shallow_copy(self):
 		rd2 = ReST(adata=self.adata.copy())
 		return rd2
@@ -479,3 +486,36 @@ class ReST(object):
 		ax.axis('off')
 		plt.close()
 		return f
+	
+	def save(self, out_folder):
+		if not os.path.exists(out_folder):
+			os.mkdir(out_folder)
+		joblib.dump(self.adata.copy(), os.path.join(out_folder, "adata.job"))
+		self.region_deg_results.to_csv(os.path.join(out_folder, "region_deg_results.csv"))
+		self.thr_opt_fig.savefig(os.path.join(out_folder, "threshold_finding_figure.png"), dpi=200, bbox_inches='tight')
+
+		atts = {'species': self.species,
+			'shape': self.shape,
+			'region_vAllmarker_dict': self.region_vAll_marker_dict,
+			'region_color_dict':  self.region_color_dict,
+			'auto_region_names': self.auto_region_names,
+			'region_enrichment_result': self.region_enrichment_result
+			}
+
+		joblib.dump(atts, os.path.join(out_folder, 'ReST_attributes.job'))
+	
+	def load(self, folder):
+		assert os.path.exists(folder)
+		self.adata = joblib.load(os.path.join(folder, "adata.job"))
+
+		if os.path.exists(os.path.join(folder, "region_deg_results.csv")):
+			self.region_deg_results = pd.read_csv(os.path.join(folder, "region_deg_results.csv"), index_col=0)
+
+		atts = joblib.load(os.path.join(folder, 'ReST_attributes.job'))
+
+		self.species = atts['species']
+		self.shape = atts['shape']
+		self.region_vAll_marker_dict = atts['region_vAll_marker_dict']
+		self.auto_region_names = atts['auto_region_names']
+		self.region_enrichment_result = atts['region_enrichment_result']
+

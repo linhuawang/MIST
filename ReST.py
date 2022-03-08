@@ -517,7 +517,7 @@ class ReST(object):
 
 		self.species = atts['species']
 		self.shape = atts['shape']
-		self.region_vAll_marker_dict = atts['region_vAll_marker_dict']
+		self.region_vAll_marker_dict = atts['region_vAllmarker_dict']
 		self.auto_region_names = atts['auto_region_names']
 		self.region_enrichment_result = atts['region_enrichment_result']
 

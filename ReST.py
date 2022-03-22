@@ -13,16 +13,36 @@ from scipy.sparse import csr_matrix
 from imputers import Imputer
 import shutil
 import os
-from sklearn.preprocessing import StandardScaler
 from alphashape import alphashape
 from descartes import PolygonPatch
 import joblib
+import plotly.express as px
+import gseapy as gp
 
 class ReST(object):
-	"""docstring for ClassName"""
+	""" An Region-based Spatial Transcriptomics (ReST) object dedicated to perform 
+		multiple region based algorithms and functions.
+	"""
 	def __init__(self, path=None, adata=None, 
 		counts=None, coordinates=None, gene_df=None):
-		# super(ClassName, self).__init__()
+		"""Build the object 
+
+		Parameters (one group of the following parameters):
+		---------------------------------------------------
+			1. path: to the folder contains the results from Space Ranger
+				- spatial (folder)
+				- filtered expression matrix in .h5 format
+			2. adata: processed AnnData object with count, spot and gene meta data frame
+			3. 
+				i) counts: gene expression data frame in Pandas.DataFrame format
+				ii) coordinates: spot meta data frame, with x, y columns denoting coordinates
+				iii) gene_df: gene meta data frame
+			4. if no parameters are given, please use load() function to load data later.
+
+		Return:
+		-------
+			ReST object
+		"""
 		if path != None:
 			adata = sc.read_visium(path)
 			self.shape = adata.shape
@@ -37,10 +57,6 @@ class ReST(object):
 			adata = None
 			self.shape = None
 			print("Please use load() function to load data. Otherwise, no useful info. can be used.")
-			# print('Wrong data input. Either format of the following inputs are eligible:\n\
-			# 	\t 1. The out/ path from SpaceRanger results,\n\
-			# 	\t 2. Raw AnnData,\n\
-			# 	\t 3. A raw count matrix (numpy array), coordinates data frame, and gene information data frame.')
 		self.adata = adata
 		self.nodes = None
 		self.species = None
@@ -50,17 +66,35 @@ class ReST(object):
 		self.region_color_dict = None
 
 	def shallow_copy(self):
+		"""helper function to copy the object to avoid overwritten"""
 		rd2 = ReST(adata=self.adata.copy())
 		return rd2
 
 	def preprocess(self, hvg_prop=0.8,species='Human', n_pcs=30, filter_spot=True):
+		"""Important function to preprocess the data by normalization and filtering
+		
+		Parameters:
+		-----------
+		hvg_prop: float between 0 and 1, fraction of highly variable genes to be used in PCA
+		species: str, either Mouse or Human, species of the sample
+		n_pcs: int, number of principal components to be used when calculating the similarity matrix
+		filter_spot: bool, wheter to apply spot filtering or not
+
+		Procedures:
+		-----------
+		1. Filter spots with less than 1500 UMIs and more than 20% mitochondria genes
+		2. Filter genes that are expressed in less than 10 spots
+		3. Normalization of raw counts into logCPM to account for library size difference and smooth variance
+		4. Apply PCA using highly variable genes
+		5. Calculate paired similarity matrix
+		"""
 		adata = self.adata.copy()
 		adata.var_names_make_unique()
 		adata.obs['new_idx'] = adata.obs[['array_col', 'array_row']].apply(lambda x: 'x'.join(x.astype(str)), axis=1)
 
 		print(f'Before QC: {adata.shape[0]} observations and {adata.shape[1]} genes.')
 
-		## Preprocessing and QC
+		# Procedure 1: Filter spots
 		if species == 'Human':
 			adata.var["mt"] = adata.var_names.str.startswith("MT-")
 		elif species == 'Mouse':
@@ -75,30 +109,52 @@ class ReST(object):
 		print(f'Filtering spots with less than {min_count} UMIs.')
 		if filter_spot:
 			sc.pp.filter_cells(adata, min_counts=min_count)
-		#sc.pp.filter_cells(adata, max_counts=max_count)
+
 		adata = adata[adata.obs["pct_counts_mt"] < 20]
-		# print(f"#cells after MT filter: {adata.n_obs}")
+
+		# Procedure 2: Filter genes
 		sc.pp.filter_genes(adata, min_cells=10)
 		print(f'After QC: {adata.shape[0]} observations and {adata.shape[1]} genes.')
-		## Data normalization 
+
+		# Procedure 3: Data normalization 
 		adata.raw = adata
-		# LOG2CPM normalization
 		sc.pp.normalize_total(adata, inplace=True, target_sum=10**6)
 		adata.layers['CPM'] = adata.X.copy()
 		sc.pp.log1p(adata, base=2)
+
+		# Procedure 4: Apply PCA using highly variable genes
 		sc.pp.highly_variable_genes(adata, flavor="seurat", n_top_genes=int(hvg_prop * adata.shape[1]))
-		## Construct a knn graph based on PC similarity (top 50, nneighbors=100)
 		sc.pp.pca(adata, n_comps=n_pcs)
 
+		# Procedure 5: Calculate paired similarity matrix
 		adata.obsp['raw_weights'] = pd.DataFrame(data=adata.obsm['X_pca'], 
 			index=adata.obs_names).T.corr().loc[adata.obs_names, adata.obs_names].values
 		self.adata=adata
 
 	def extract_regions(self, min_sim=0.5, max_sim=0.91,
 					 gap=0.05, min_region=40, sigma=1, region_min=3):
+		"""Extract core regions by mathemetical optimization, edge pruning and modularity detection
+		
+		Parameters:
+		-----------
+		min_sim: float, range from 0 to 1, determines the starting point to search for the optimal threshold.
+		max_sim: float, range from 0 to 1, determines the end point to search for the optimal threshold.
+		gap: float, step size to in the grid search
+		sigma: penalty parameter (regularization) on the isolated spots
+		region_min: int, minimum of number of regions to search in the graph
 
+		Procedures:
+		-----------
+		1. Create a MIST object
+		2. Optimize the threshold
+		3. Prune the graph and detect the connected components as regions
+		4. Result integration
+		"""
+
+		assert min_sim < max_sim
 		warnings.filterwarnings('ignore')
 
+		# 1.Create a MIST object
 		adata = self.adata.copy()
 		mixture_meta = pd.DataFrame({'x':adata.obs.array_col.tolist(),
 									 'y':adata.obs.array_row.tolist()}, 
@@ -115,17 +171,17 @@ class ReST(object):
 		count_data = Data(count=count_df, meta=mixture_meta, cormat=cor_df)
 		t2 = time()
 		print(f"MIST Data created in {(t2-t11):.2f} seconds.")
+
+		# 2 & 3. Optimize the threshold and detect regions
 		results = select_epsilon(count_data, min_sim=min_sim, 
 												max_sim=max_sim, gap=gap, 
 												min_region=min_region, 
 												sigma=1, region_min=region_min)
-
+		# 4. Result integration
 		self.thr_opt_fig = results['thre_figure']
 		sample_regions = results['region_df']
 		count_data.epsilon = results['threshold']
-
 		self.nodes = count_data.nodes
-
 		region_dict = dict(zip(sample_regions.index.tolist(),
 							 sample_regions.region_ind))
 		region_inds = []
@@ -140,6 +196,16 @@ class ReST(object):
 		self.adata=adata
 
 	def assign_region_colors(self, region_colors = None):
+		""" Assign a color to each detected region. If region_colors provided, do as it
+			instructed. Otherwise, use automatically assigned colors.
+
+		@limit: <= 20 regions
+
+		Parameters:
+		-----------
+		region_colors: a dictionary object if provided
+
+		"""
 		regions = set(self.adata.obs.region_ind)
 		if 'isolated' in regions:
 			regions.remove("isolated")
@@ -161,6 +227,8 @@ class ReST(object):
 
 
 	def extract_regional_markers(self, mode='all'):
+		"""Extract markers for each detected region using Wilcoxon rank-sum test
+		"""
 		adata = self.adata.copy()
 		regions = set(adata.obs.region_ind)
 		if 'isolated' in regions:
@@ -192,7 +260,6 @@ class ReST(object):
 					df = pd.DataFrame({'region1': reg1, 'region2': reg2, 'gene': genes,
 										'lfc': genes_1_2_lfcs, 'pval': pvals, 'padj': padjs})
 					df = df.loc[(np.absolute(df.lfc) > 0.26) & (df.padj <= 0.01)]
-					#print(f"Region DEG {reg1}-{reg2}: {df.loc[(df.lfc > 0.26) & (df.padj <=0.01)].shape[0]}, Region DEG {reg2}-{reg1}: {df.loc[(df.lfc < -0.26) & (df.padj <=0.01)].shape[0]}")
 					dfs.append(df)
 			dfs = pd.concat(dfs)
 			dfs_pos = dfs.loc[dfs.lfc >= 0]
@@ -234,8 +301,15 @@ class ReST(object):
 			self.region_deg_results = all_region_markers
 
 	def runGSEA(self, mode='all', gene_sets=None, species='Human'):
-		import gseapy as gp
-		from gseapy.plot import barplot, dotplot
+		"""Run Gene Set Enrichment Analysis using gseapy:
+			https://gseapy.readthedocs.io/en/latest/introduction.html
+
+		Parameters:
+		----------
+		gene_sets: list, gene sets to run the analysis
+		spcies: str, either 'Mouse' or 'Human'
+		"""
+
 		print(f"Running GSEA on mode {mode} for species {species}.")
 
 		if mode not in ['all', 'mutual']:
@@ -299,6 +373,8 @@ class ReST(object):
 			shutil.rmtree("Enrichr")
 
 	def plot_regions(self, marker_size=50, mode='spot_level'):
+		""" Plot spot-level region assignments via plotly
+		"""
 		n = int(np.sqrt(self.adata.shape[0])) / 2
 		f = plt.figure(figsize=(n,n))
 		if mode == 'spot_level':
@@ -331,13 +407,21 @@ class ReST(object):
 			df['term4'] =term4
 			df['term5'] =term5
 
-			import plotly.express as px
 			fig = px.scatter(df, y="array_col", x="array_row", 
 				color="region_ind", hover_data=['region', 'term1','term2', 'term3','term4', 'term5'], 
 				width=400, height=400)
 			fig.show()
 
 	def plot_region_enrichment(self, top=3, flavor='default'):
+		"""plot region enrichment barplot in either plotly flavor or default (seaborn) flavor
+		
+		Parameters:
+		-----------
+		top: int, number of top enriched terms to be plotted, default 3.
+		flavor: str,
+			- default: seaborn plot
+			- plotly: plotly plot
+		"""
 		assert flavor in ['default', 'plotly']
 		regions = self.region_enrichment_result.keys()
 		region_dfs = []
@@ -350,7 +434,6 @@ class ReST(object):
 		region_dfs['-log10(P-adjust)'] =  - np.log10(10E-10 + region_dfs['Adjusted P-value'])
 		region_dfs['log2(Odds-ratio)'] = np.log2(region_dfs['Odds Ratio']).astype('float')
 		if flavor == 'plotly':
-			import plotly.express as px
 			fig = px.bar(region_dfs, x='-log10(P-adjust)', y="Term", 
 				color="log2(Odds-ratio)", barmode="group",
 				facet_col="region", height=800, width=1600)
@@ -363,6 +446,8 @@ class ReST(object):
 			return f
 
 	def plot_region_volcano(self, ncols=None, nrows=None):
+		"""Plot volcano gene enrichment plot with top 10 genes listed.
+		"""
 		region_deg_results = self.region_deg_results
 		regions = list(set(region_deg_results.region))
 
@@ -404,6 +489,20 @@ class ReST(object):
 
 
 	def impute(self, method='MIST', n_neighbors=4, ncores=1, nExperts=5):
+		"""Important function to impute the data. For more information, please investigate
+		imputers.py and MIST2.py.
+
+		Parameters:
+		-----------
+		method: str, options included ["MAGIC", "knnSmooth", "mcImpute", "spKNN", "MIST"]
+		n_neighbors: int, parameter for spKNN
+		ncores: int, for parallel computing
+		nExperts: int, for MIST
+
+		Return:
+		-------
+		Imputed daat as a Pandas data frame.
+		"""
 		rdata = self.shallow_copy()
 		imputer = Imputer(method, rdata)
 		nodes = self.nodes
@@ -457,6 +556,20 @@ class ReST(object):
 
 	def visualize_gene_expr(self, gene, region_colors = None,
 				 gcmap='Reds', vmin=None, vmax = None):
+		"""Visualize gene expression patterns as a heatmap with region boundaries in-situ.
+
+		Parameters:
+		-----------
+		gene: str, gene name
+		reigon_colors: dict, region color dictionary (optional).
+		gcmap: str, cmap for gene
+		vmin: float, value minimum for heatmap
+		vmax: float, value maximum for heatmap
+
+		Return:
+		-------
+		matplotlib figure object
+		"""
 
 		radius = 2
 		alpha = 1 / (radius-0.1)
@@ -505,6 +618,12 @@ class ReST(object):
 		return f
 	
 	def save(self, out_folder):
+		"""Save the ReST object to designated folder
+
+		Parameters:
+		-----------
+		out_folder: str, folder path to save the data to
+		"""
 		if not os.path.exists(out_folder):
 			os.mkdir(out_folder)
 		joblib.dump(self.adata.copy(), os.path.join(out_folder, "adata.job"))
@@ -522,6 +641,12 @@ class ReST(object):
 		joblib.dump(atts, os.path.join(out_folder, 'ReST_attributes.job'))
 	
 	def load(self, folder):
+		"""Load the ReST object from designated folder
+
+		Parameters:
+		-----------
+		folder: str, folder path to load the data from
+		"""
 		assert os.path.exists(folder)
 		self.adata = joblib.load(os.path.join(folder, "adata.job"))
 
@@ -536,4 +661,3 @@ class ReST(object):
 		self.auto_region_names = atts['auto_region_names']
 		self.region_enrichment_result = atts['region_enrichment_result']
 		self.region_color_dict = atts['region_color_dict']
-

@@ -1,5 +1,8 @@
 # Missing value Imputation for Spatially resolved Transcriptomics (MIST)
 
+We have moved our MIST package inside a more general object - ReST, which stands for Region-based
+algorithms for Spatial Transcriptomics analysis. Please expect more contents to be added to ReST in the future.
+
 ## Required dependencies
 
   * pandas=0.25.3
@@ -9,15 +12,34 @@
   * scipy=1.6.1
   * tqdm=4.56.0
   * imageio
+  * alphashape
+  * descartes
+  * joblib
+  * gseapy
 
-## Data prerequisites
+## Installation
 
-  1. Raw count matrix without normalization, rows as samples and columns as genes
-  2. First column as the coordinates of each sample with the format of 'XxY', eg. '12x23'
-  3. csv format
+  We recommended to create a conda environment with above-listed dependencies installed.
 
+## Input data format
 
-## Parameters 
+  1. For 10X Visium, Space Ranger `Folder` with the following contents:
+
+    i) `Folder`/spatial/
+      - tissue_positions_list.csv
+    ii) `Folder`/filtered_feature_bc_matrix.h5
+
+  2. `adata`: processed AnnData object with count, spot and gene meta data frame
+
+  3. General spatial transcriptomics data
+    i) counts: gene expression data frame in Pandas.DataFrame format
+		ii) coordinates: spot meta data frame, with x, y columns denoting coordinates
+		iii) gene_df: gene meta data frame
+
+## Running MIST
+  Please read `Tutorial 1 - MIST region detection, functional annotation and imputation (Melanoma).ipynb` for instructions.
+    
+<!-- ## Parameters 
   ### I/O parameters
   * -f: path to the input raw count matrix (csv).
   * -o: path to save the imputed data sets.
@@ -52,4 +74,4 @@
   
   The above code will visualize the detected regions by giving a figure like:
 
-  [Cluster Visualization](test_data/output/cluster.png)
+  [Cluster Visualization](test_data/output/cluster.png) -->

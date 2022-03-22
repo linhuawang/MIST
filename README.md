@@ -25,18 +25,18 @@ algorithms for Spatial Transcriptomics analysis. Please expect more contents to 
 
   1. For 10X Visium, Space Ranger `Folder` with the following contents:
 
-  * [Folder]/spatial/tissue_positions_list.csv
-  * [Folder]/filtered_feature_bc_matrix.h5
+    * [Folder]/spatial/tissue_positions_list.csv
+    * [Folder]/filtered_feature_bc_matrix.h5
 
   2. `adata`: processed AnnData object with count, spot and gene meta data frame
 
   3. General spatial transcriptomics data
 
-  * counts - gene expression data frame in Pandas.DataFrame format
+    * counts - gene expression data frame in Pandas.DataFrame format.
 
-	* coordinates - spot meta data frame, with x, y columns denoting coordinates
-  
-	* gene_df - gene meta data frame
+	  * coordinates - spot meta data frame, with x, y columns denoting coordinates.
+
+	  * gene_df - gene meta data frame.
 
 ## Running MIST
   Please read `Tutorial 1 - MIST region detection, functional annotation and imputation (Melanoma).ipynb` for instructions.

@@ -675,13 +675,13 @@ class ReST(object):
 		self.manual_region_name_dict = region_names
 		self.adata.obs['manaul_name'] = self.adata.obs['region_ind'].map(region_names)
 
-	def save_ReSort(self, folder, format='csv'):
+	def save_ReSort(self, folder, fmt='csv'):
 		"""Save the detected regions as references,
 			we recommend manually assign region names using 
 			manual_assign_region_names() first.
 		"""
-		assert format in ['csv', 'tsv']
-		sep = "," if format=='csv' else "\t"
+		assert fmt in ['csv', 'tsv']
+		sep = "," if fmt=='csv' else "\t"
 
 		adata = self.adata.copy()
 		assert 'region_ind' in adata.obs.columns.tolist()
@@ -701,10 +701,10 @@ class ReST(object):
 		ref_count = pd.DataFrame(data=ref_vals, index=adata_ref.obs_names, columns=adata_ref.var_names)
 
 		mixture_vals = adata.layers['CPM']
-		if not isinstance(mixture_vals, np.array):
+		if not isinstance(mixture_vals, np.ndarray):
 			mixture_vals = mixture_vals.toarray()
 		mixture_count = pd.DataFrame(data=mixture_vals, index=adata.obs.new_idx, columns=adata.var_names)
 
-		ref_meta.to_csv(f"{folder}/ReSort_reference_meta.{format}", sep=sep)
-		ref_count.to_csv(f"{folder}/ReSort_reference_count.{format}", sep=sep)
-		mixture_count.to_csv(f"{folder}/ReSort_mixture_count.{format}", sep=sep)
+		ref_meta.to_csv(f"{folder}/ReSort_reference_meta.{fmt}", sep=sep)
+		ref_count.to_csv(f"{folder}/ReSort_reference_count.{fmt}", sep=sep)
+		mixture_count.to_csv(f"{folder}/ReSort_mixture_count.{fmt}", sep=sep)

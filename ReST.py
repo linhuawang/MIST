@@ -696,7 +696,7 @@ class ReST(object):
 		ref_meta.columns = ['bio_celltype']
 
 		ref_vals = adata_ref.layers['CPM']
-		if not isinstance(ref_vals, np.array):
+		if not isinstance(ref_vals, np.ndarray):
 			ref_vals = ref_vals.toarray()
 		ref_count = pd.DataFrame(data=ref_vals, index=adata_ref.obs_names, columns=adata_ref.var_names)
 

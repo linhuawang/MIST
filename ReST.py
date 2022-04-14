@@ -698,11 +698,13 @@ class ReST(object):
 		ref_vals = adata_ref.layers['CPM']
 		if not isinstance(ref_vals, np.ndarray):
 			ref_vals = ref_vals.toarray()
+		ref_vals = ref_vals.astype(int)
 		ref_count = pd.DataFrame(data=ref_vals, index=adata_ref.obs_names, columns=adata_ref.var_names)
 
 		mixture_vals = adata.layers['CPM']
 		if not isinstance(mixture_vals, np.ndarray):
 			mixture_vals = mixture_vals.toarray()
+		mixture_vals = mixture_vals.astype(int)
 		mixture_count = pd.DataFrame(data=mixture_vals, index=adata.obs.new_idx, columns=adata.var_names)
 
 		ref_meta.to_csv(f"{folder}/ReSort_reference_meta.{fmt}", sep=sep)

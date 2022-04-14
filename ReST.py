@@ -64,6 +64,7 @@ class ReST(object):
 		self.auto_region_names = None
 		self.region_enrichment_result = None
 		self.region_color_dict = None
+		self.annot_adata = None
 
 	def shallow_copy(self):
 		"""helper function to copy the object to avoid overwritten"""
@@ -669,11 +670,13 @@ class ReST(object):
 						manually matched names
 		"""
 		regions = set(self.adata.obs.region_ind)
-			
-		## Make sure every region is covered in the provided names
-		assert regions == set(region_names.keys())
+		annot_regions = regions.intersection(set(region_names.keys()))
+		assert len(annot_regions) > 0
+		adata = self.adata.copy()
+		adata = adata[adata.obs.region_ind.isin(annot_regions),:]
 		self.manual_region_name_dict = region_names
-		self.adata.obs['manual_name'] = self.adata.obs['region_ind'].map(region_names)
+		adata.obs['manual_name'] = adata.obs['region_ind'].map(region_names)
+		self.annot_adata = adata
 
 	def save_ReSort(self, folder, fmt='csv'):
 		"""Save the detected regions as references,
@@ -683,13 +686,12 @@ class ReST(object):
 		assert fmt in ['csv', 'tsv']
 		sep = "," if fmt=='csv' else "\t"
 
-		adata = self.adata.copy()
-		assert 'region_ind' in adata.obs.columns.tolist()
-
-		if 'manual_name' in adata.obs.columns:
-			col = 'manual_name'
-		else:
+		if self.annot_adata is None:
+			adata = self.adata.copy()
 			col = 'region_ind'
+		else:
+			adata = self.annot_adata.copy()
+			col = 'manual_name'
 
 		adata_ref = adata[adata.obs.region_ind != 'isolated', :]
 		ref_meta = adata_ref.obs[[col]]

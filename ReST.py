@@ -688,13 +688,12 @@ class ReST(object):
 		adata = self.adata.copy()
 		assert 'region_ind' in adata.obs.columns.tolist()
 
-		adata_ref = adata[adata.obs.region_ind != 'isolated', :]
-
 		if 'manual_name' in adata.obs.columns:
 			col = 'manual_name'
 		else:
 			col = 'region_ind'
-		
+			
+		adata_ref = adata[adata.obs.region_ind != 'isolated', :]
 		ref_meta = adata_ref.obs[[col]]
 		ref_meta.columns = ['bio_celltype']
 
@@ -703,7 +702,6 @@ class ReST(object):
 			ref_vals = ref_vals.toarray()
 		ref_count = pd.DataFrame(data=ref_vals, index=adata_ref.obs_names, columns=adata_ref.var_names)
 
-		adata = adata.raw.to_adata()
 		mixture_vals = adata.layers['CPM']
 		if not isinstance(mixture_vals, np.array):
 			mixture_vals = mixture_vals.toarray()

@@ -673,7 +673,7 @@ class ReST(object):
 		## Make sure every region is covered in the provided names
 		assert regions == set(region_names.keys())
 		self.manual_region_name_dict = region_names
-		self.adata.obs['manaul_name'] = self.adata.obs['region_ind'].map(region_names)
+		self.adata.obs['manual_name'] = self.adata.obs['region_ind'].map(region_names)
 
 	def save_ReSort(self, folder, fmt='csv'):
 		"""Save the detected regions as references,

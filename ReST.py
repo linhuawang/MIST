@@ -661,3 +661,54 @@ class ReST(object):
 		self.auto_region_names = atts['auto_region_names']
 		self.region_enrichment_result = atts['region_enrichment_result']
 		self.region_color_dict = atts['region_color_dict']
+	
+	def manual_assign_region_names(self, region_names):
+		""" Manually assign a name to each detected region. 
+
+		Parameters:
+		-----------
+		region_names: a dictionary object containing region_ind to 
+						manually matched names
+		"""
+		regions = set(self.adata.obs.region_ind)
+			
+		## Make sure every region is covered in the provided names
+		assert regions == set(region_names.keys())
+		self.manual_region_name_dict = region_names
+		self.adata.obs['manaul_name'] = self.adata.obs['region_ind'].map(region_names)
+
+	def save_ReSort(self, folder, format='csv'):
+		"""Save the detected regions as references,
+			we recommend manually assign region names using 
+			manual_assign_region_names() first.
+		"""
+		assert format in ['csv', 'tsv']
+		sep = "," if format=='csv' else "\t"
+
+		adata = self.adata.copy()
+		assert 'region_ind' in adata.obs.columns.tolist()
+
+		adata_ref = adata[adata.obs.region_ind != 'isolated', :]
+
+		if 'manual_name' in adata.obs.columns:
+			col = 'manual_name'
+		else:
+			col = 'region_ind'
+		
+		ref_meta = adata_ref.obs[[col]]
+		ref_meta.columns = ['bio_celltype']
+
+		ref_vals = adata_ref.layers['CPM']
+		if not isinstance(ref_vals, np.array):
+			ref_vals = ref_vals.toarray()
+		ref_count = pd.DataFrame(data=ref_vals, index=adata_ref.obs_names, columns=adata_ref.var_names)
+
+		adata = adata.raw.to_adata()
+		mixture_vals = adata.layers['CPM']
+		if not isinstance(mixture_vals, np.array):
+			mixture_vals = mixture_vals.toarray()
+		mixture_count = pd.DataFrame(data=mixture_vals, index=adata.obs.new_idx, columns=adata.var_names)
+
+		ref_meta.to_csv(f"{folder}/ReSort_reference_meta.{format}", sep=sep)
+		ref_count.to_csv(f"{folder}/ReSort_reference_count.{format}", sep=sep)
+		mixture_count.to_csv(f"{folder}/ReSort_mixture_count.{format}", sep=sep)

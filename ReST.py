@@ -584,8 +584,6 @@ class ReST(object):
 		
 		xs, ys = region_df.array_row.tolist(), region_df.array_col.tolist()
 		gexpr = self.adata[:, gene].layers['CPM'].toarray()
-		# scaler = StandardScaler()
-		# gexpr = np.ravel(scaler.fit_transform(gexpr))
 
 		s = 50
 		if self.adata.shape[0] > 1000:
@@ -692,7 +690,7 @@ class ReST(object):
 			col = 'manual_name'
 		else:
 			col = 'region_ind'
-			
+
 		adata_ref = adata[adata.obs.region_ind != 'isolated', :]
 		ref_meta = adata_ref.obs[[col]]
 		ref_meta.columns = ['bio_celltype']

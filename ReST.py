@@ -104,13 +104,13 @@ class ReST(object):
 		self.species = species
 
 		sc.pp.calculate_qc_metrics(adata, qc_vars=["mt"], inplace=True)
-		counts = adata.obs.total_counts.to_numpy()
-		min_count = np.max([np.percentile(counts, 5), 1500])
+		#counts = adata.obs.total_counts.to_numpy()
+		min_count = 1500
 		print(f'Filtering spots with less than {min_count} UMIs.')
 		if filter_spot:
 			sc.pp.filter_cells(adata, min_counts=min_count)
 
-		adata = adata[adata.obs["pct_counts_mt"] < 20]
+		adata = adata[adata.obs["pct_counts_mt"] < 25]
 
 		# Procedure 2: Filter genes
 		sc.pp.filter_genes(adata, min_cells=10)

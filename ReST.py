@@ -716,5 +716,5 @@ class ReST(object):
 		mixture_raw = self.adata.raw.to_adata().X
 		if not isinstance(mixture_raw, np.ndarray):
 			mixture_raw = mixture_raw.toarray()
-
+		mixture_raw = pd.DataFrame(data=mixture_raw, index=self.adata.obs.new_idx, columns=self.adata.var_names)
 		mixture_raw.to_csv(f"{folder}/ReSort_mixture_raw.{fmt}", sep=sep)

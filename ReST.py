@@ -713,7 +713,7 @@ class ReST(object):
 		mixture_CPM = mixture_CPM.astype(int)
 		mixture_CPM = pd.DataFrame(data=mixture_CPM, index=self.adata.obs.new_idx, columns=self.adata.var_names)
 
-		mixture_raw = self.adata.raw.toadata().X
+		mixture_raw = self.adata.raw.to_adata().X
 		if not isinstance(mixture_raw, np.ndarray):
 			mixture_raw = mixture_raw.toarray()
 

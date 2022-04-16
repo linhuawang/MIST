@@ -697,18 +697,24 @@ class ReST(object):
 		ref_meta = adata_ref.obs[[col]]
 		ref_meta.columns = ['bio_celltype']
 
-		ref_vals = adata_ref.layers['CPM']
+		ref_vals = adata_ref.raw.to_adata().X
+
 		if not isinstance(ref_vals, np.ndarray):
 			ref_vals = ref_vals.toarray()
+
 		ref_vals = ref_vals.astype(int)
 		ref_count = pd.DataFrame(data=ref_vals, index=adata_ref.obs_names, columns=adata_ref.var_names)
-
-		mixture_vals = self.adata.layers['CPM'].copy()
-		if not isinstance(mixture_vals, np.ndarray):
-			mixture_vals = mixture_vals.toarray()
-		mixture_vals = mixture_vals.astype(int)
-		mixture_count = pd.DataFrame(data=mixture_vals, index=self.adata.obs.new_idx, columns=self.adata.var_names)
-
 		ref_meta.to_csv(f"{folder}/ReSort_reference_meta.{fmt}", sep=sep)
-		ref_count.to_csv(f"{folder}/ReSort_reference_count.{fmt}", sep=sep)
-		mixture_count.to_csv(f"{folder}/ReSort_mixture_count.{fmt}", sep=sep)
+		ref_count.to_csv(f"{folder}/ReSort_reference_raw_count.{fmt}", sep=sep)
+
+		mixture_CPM =  self.adata.layers['CPM'].copy()
+		if not isinstance(mixture_CPM, np.ndarray):
+			mixture_CPM = mixture_CPM.toarray()
+		mixture_CPM = mixture_CPM.astype(int)
+		mixture_CPM = pd.DataFrame(data=mixture_CPM, index=self.adata.obs.new_idx, columns=self.adata.var_names)
+
+		mixture_raw = self.adata.raw.toadata().X
+		if not isinstance(mixture_raw, np.ndarray):
+			mixture_raw = mixture_raw.toarray()
+
+		mixture_raw.to_csv(f"{folder}/ReSort_mixture_raw.{fmt}", sep=sep)

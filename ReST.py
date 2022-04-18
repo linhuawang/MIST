@@ -537,7 +537,7 @@ class ReST(object):
 
 		for region in regions:
 			reg_df = region_df.loc[region_df.region_ind == region,:]
-			xs, ys = reg_df.array_row.tolist(), reg_df.array_col.tolist()
+			xs, ys = reg_df.array_col.tolist(), reg_df.array_row.tolist()
 			points = [[x,y] for x, y in zip(xs, ys)]
 			
 			if region_colors != None:

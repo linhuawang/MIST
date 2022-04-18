@@ -36,7 +36,7 @@ def region_assign(data, epi, min_region=5):
     region_grps  = region_df.groupby("cluster_ind")
     
     regions = []
-    for name, rg in region_grps:
+    for _, rg in region_grps:
         regions.append(rg.spot.tolist())
         
     region_df2 = assign_membership(regions, min_region)
@@ -141,7 +141,7 @@ def select_epsilon(data, min_sim=0.4, max_sim=0.91, gap=0.02,
         min_region=5, sigma=0.5, region_min=3, ep=None):
     st = time()
     
-    if ep is not None:
+    if ep is None:
         eps = np.arange(min_sim, max_sim, gap)
         scores = []
         for i in trange(len(eps)):
@@ -161,4 +161,5 @@ def select_epsilon(data, min_sim=0.4, max_sim=0.91, gap=0.02,
         print("Epsilon %.3f is selected in %.2f seconds." %(ep, end-st))
         return {'thre_figure': f, 'region_df': region_df, 'threshold': ep}
     else:
+        region_df, ccs = region_assign(data, ep, min_region)
         return {'thre_figure': None, 'region_df': region_df, 'threshold': ep}

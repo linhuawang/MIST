@@ -133,7 +133,7 @@ class ReST(object):
 		self.adata=adata
 
 	def extract_regions(self, min_sim=0.5, max_sim=0.91,
-					 gap=0.05, min_region=40, sigma=1, region_min=3):
+					 gap=0.05, min_region=40, sigma=0.5, region_min=3):
 		"""Extract core regions by mathemetical optimization, edge pruning and modularity detection
 		
 		Parameters:
@@ -141,7 +141,7 @@ class ReST(object):
 		min_sim: float, range from 0 to 1, determines the starting point to search for the optimal threshold.
 		max_sim: float, range from 0 to 1, determines the end point to search for the optimal threshold.
 		gap: float, step size to in the grid search
-		sigma: penalty parameter (regularization) on the isolated spots
+		sigma: threshold parameter for the least acceptible isolated spots' proportions, default 0.5
 		region_min: int, minimum of number of regions to search in the graph
 
 		Procedures:
@@ -177,7 +177,7 @@ class ReST(object):
 		results = select_epsilon(count_data, min_sim=min_sim, 
 												max_sim=max_sim, gap=gap, 
 												min_region=min_region, 
-												sigma=1, region_min=region_min)
+												sigma=sigma, region_min=region_min)
 		# 4. Result integration
 		self.thr_opt_fig = results['thre_figure']
 		sample_regions = results['region_df']
@@ -522,11 +522,11 @@ class ReST(object):
 			regions.remove('isolated')
 		regions = list(regions)
 		
-		xs, ys = region_df.array_row.tolist(), region_df.array_col.tolist()
+		xs, ys = region_df.array_col.tolist(), region_df.array_row.tolist()
 
 		if by == 'UMI':
-			sns.scatterplot(data=region_df, x='array_row', 
-					y='array_col', hue='total_counts', palette='Reds', ax = ax)
+			sns.scatterplot(data=region_df, x='array_col', 
+					y='array_row', hue='total_counts', palette='Reds', ax = ax)
 		else:
 			ax.scatter(xs, ys , color="lightgray", s=50)
 
@@ -552,6 +552,7 @@ class ReST(object):
 				ax.add_patch(PolygonPatch(alpha_shape, fc=c, alpha=0.5,
 									  ec=c, linewidth=3))
 		ax.axis('off')
+		plt.gca().invert_yaxis()
 		plt.close()
 		return f
 
@@ -583,7 +584,7 @@ class ReST(object):
 
 		regions = list(regions)
 		
-		xs, ys = region_df.array_row.tolist(), region_df.array_col.tolist()
+		xs, ys = region_df.array_col.tolist(), region_df.array_row.tolist()
 		gexpr = self.adata[:, gene].layers['CPM'].toarray()
 
 		s = 50
@@ -604,7 +605,7 @@ class ReST(object):
 		
 		for region in regions:
 			reg_df = region_df.loc[region_df.region_ind == region,:]
-			xs, ys = reg_df.array_row.tolist(), reg_df.array_col.tolist()
+			xs, ys = reg_df.array_col.tolist(), reg_df.array_row.tolist()
 			points = [[x,y] for x, y in zip(xs, ys)]
 			
 			c = region_colors[region]
@@ -613,6 +614,7 @@ class ReST(object):
 			ax.add_patch(PolygonPatch(alpha_shape, fc='none', 
 									  ec=c, linewidth=3))
 		ax.axis('off')
+		plt.gca().invert_yaxis()
 		plt.close()
 		return f
 	

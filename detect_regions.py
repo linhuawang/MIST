@@ -130,31 +130,35 @@ def obj_scores(ccs, cormat, min_region=5, sigma=1, region_min=3):
         if len(cc) >= min_region:
             n_regional += len(cc)
     term3 = n_regional / n_total
-    scores = -1 * (term1 - term2 + sigma * term3) + 1
+    # scores = -1 * (term1 - term2 + sigma * term3) + 1
     #print(term1, term2, term3, scores)
-    if len(ccs) < region_min:
+    scores = term2 - term1
+    if (len(ccs) < region_min) or (terms < sigma):
         return 1
     return scores
 
 def select_epsilon(data, min_sim=0.4, max_sim=0.91, gap=0.02, 
-        min_region=5, sigma=1, region_min=3):
+        min_region=5, sigma=0.5, region_min=3, ep=None):
     st = time()
-    eps = np.arange(min_sim, max_sim, gap)
-    scores = []
-    for i in trange(len(eps)):
-        ep = eps[i]
-        _, ccs = region_assign(data, ep,min_region)
-        score = obj_scores(ccs, data.cormat, min_region, sigma, region_min)
-        scores.append(score)
     
-    ind = np.argmin(scores)
-    ep, score = eps[ind], scores[ind]
-    f, ax1 = plt.subplots(ncols=1, nrows=1, figsize=(6, 5))
-    ax1.plot(eps, scores)
-    ax1.vlines(ep, ymin=score, ymax=np.max(scores), color='red', ls='--')
-    ax1.set_ylim(score-0.1, np.max(scores) + 0.1)
-    region_df, ccs = region_assign(data, ep, min_region)
-    end = time()
-    print("Epsilon %.3f is selected in %.2f seconds." %(ep, end-st))
-    return {'thre_figure': f, 'region_df': region_df, 'threshold': ep}
-    
+    if ep is not None:
+        eps = np.arange(min_sim, max_sim, gap)
+        scores = []
+        for i in trange(len(eps)):
+            ep = eps[i]
+            _, ccs = region_assign(data, ep,min_region)
+            score = obj_scores(ccs, data.cormat, min_region, sigma, region_min)
+            scores.append(score)
+        
+        ind = np.argmin(scores)
+        ep, score = eps[ind], scores[ind]
+        f, ax1 = plt.subplots(ncols=1, nrows=1, figsize=(6, 5))
+        ax1.plot(eps, scores)
+        ax1.vlines(ep, ymin=score, ymax=np.max(scores), color='red', ls='--')
+        ax1.set_ylim(score-0.1, np.max(scores) + 0.1)
+        region_df, ccs = region_assign(data, ep, min_region)
+        end = time()
+        print("Epsilon %.3f is selected in %.2f seconds." %(ep, end-st))
+        return {'thre_figure': f, 'region_df': region_df, 'threshold': ep}
+    else:
+        return {'thre_figure': None, 'region_df': region_df, 'threshold': ep}

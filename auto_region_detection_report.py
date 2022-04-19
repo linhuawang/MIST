@@ -7,11 +7,11 @@ def generate_process_report(input_folder, output_folder = 'none',
     ReST_args = {"species":"Mouse", "min_sim": 0.1, 
     "min_region":40, "gap":0.02,
      "sigma":0.5, "region_min":2,
-     "hvg_prop":  0.8}):
+     "hvg_prop":  0.8, "n_pcs": 30}):
 
     pdf = matplotlib.backends.backend_pdf.PdfPages(f"{output_folder}/region_detection_report.pdf")
     rd = ReST.ReST(input_folder)
-    rd.preprocess(species=ReST_args['species'], hvg_prop=ReST_args['hvg_prop'])
+    rd.preprocess(species=ReST_args['species'], hvg_prop=ReST_args['hvg_prop'], n_pcs=ReST_args['n_pcs'])
 
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)

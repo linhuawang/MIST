@@ -3,7 +3,13 @@
 We have moved our MIST package inside a more general object - ReST, which stands for Region-based
 algorithms for Spatial Transcriptomics analysis. Please expect more contents to be added to ReST in the future.
 
-## Required dependencies
+## Install
+
+We recommend using a conda environment to automatically install all required dependencies. Conda installation guide can be found at https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html. After installing conda, run the following command to install a ReST environment:
+
+  conda env create -f environment.yml
+
+Or, users could manually install all required dependencies as below:
 
   * pandas=0.25.3
   * numpy=1.18.5
@@ -16,10 +22,6 @@ algorithms for Spatial Transcriptomics analysis. Please expect more contents to 
   * descartes
   * joblib
   * gseapy
-
-## Installation
-
-  We recommended to create a conda environment with above-listed dependencies installed.
 
 ## Input data format
 1. For 10X Visium, Space Ranger `Folder` with the following contents:

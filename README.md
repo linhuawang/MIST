@@ -7,7 +7,7 @@ algorithms for Spatial Transcriptomics analysis. Please expect more contents to 
 
 We recommend using a conda environment to automatically install all required dependencies. Conda installation guide can be found at https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html. After installing conda, run the following command to install a ReST environment:
 
-  conda env create -f environment.yml
+  `conda env create -f environment.yml`
 
 Or, users could manually install all required dependencies as below:
 

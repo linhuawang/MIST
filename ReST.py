@@ -442,7 +442,7 @@ class ReST(object):
 		else:
 			f = plt.figure(figsize=(10, 5))
 			sns.catplot(data=region_dfs, x='-log10(P-adjust)', y="Term", 
-    		color="log2(Odds-ratio)", palette='viridis', col='region',
+    		color="-log10(P-adjust)", palette='Reds', col='region',
             kind='bar')
 			return f
 

@@ -480,7 +480,7 @@ class ReST(object):
 			kdf1 = kdf0.sort_values("-log10(FDR)", ascending=False).iloc[:10, :]
 			ys, xs, genes = kdf1['-log10(FDR)'].to_numpy(), kdf1['lfc'].to_numpy(), kdf1['gene'].tolist()
 			for i in range(len(genes)):
-				axs[k].text(4, 12-(0.8*i), genes[i], fontsize=13, color='orange')
+				axs[k].text(4, 12-(0.8*i), genes[i], fontsize=13, color='black')
 			axs[k].set_xlabel("log2(fold-change)", fontsize=14)
 			axs[k].set_ylabel("-log10(FDR)", fontsize=14)
 

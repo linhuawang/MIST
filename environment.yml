@@ -5,7 +5,6 @@ channels:
   - defaults
 dependencies:
   - descartes=1.1.0
-  - gseapy=0.9.5
   - imageio=2.9.0
   - jupyter=1.0.0
   - networkx=2.7.1
@@ -36,3 +35,4 @@ dependencies:
     - stdlib-list==0.8.0
     - tqdm==4.63.1
     - umap-learn==0.5.2
+    - gseapy==0.10.8

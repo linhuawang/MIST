@@ -26,8 +26,8 @@ def MIST(rdata, nExperts=10, ncores=1, verbose=1):
 	start_time = time()
 
 	## Get the region assignment
-	member_df = rdata.adata.obs
-	isolated_spots = member_df.loc[member_df.region_ind == 'isolated'].index.tolist()
+	member_df = rdata.adata.obs.copy()
+	isolated_spots = member_df.loc[member_df.region_ind == 'isolated', 'new_idx'].tolist()
 	core_regions = set(member_df.region_ind)
 	core_regions.remove("isolated")
 	core_regions = list(core_regions)
@@ -49,7 +49,7 @@ def MIST(rdata, nExperts=10, ncores=1, verbose=1):
 	for i1 in range(len(core_regions)):
 		ts = time()
 		region = core_regions[i1]
-		region_spots = member_df.loc[member_df.region_ind == region, :].index.tolist()
+		region_spots = member_df.loc[member_df.region_ind == region, 'new_idx'].tolist()
 		nspots += len(region_spots)
 		print(f"[Start][Region] {i1} / {len(core_regions)} | [Spots] {len(region_spots)} | {nspots} / {member_df.shape[0] - len(isolated_spots)}.")
 		# QC

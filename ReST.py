@@ -349,10 +349,12 @@ class ReST(object):
 				for _, mgp in marker_grps:
 					region_markers = region_markers.intersection(set(mgp.gene))
 				region_markers = list(region_markers)
-
-			res = gp.enrichr(gene_list= region_markers, 
+			try:
+				res = gp.enrichr(gene_list= region_markers, 
 							gene_sets=gene_sets,
 							organism=species)
+			except:
+				res = gp.enrichr(gene_list= region_markers, gene_sets=gene_sets)
 			res = res.res2d
 			res = res.sort_values("Odds Ratio")
 			res_sig = res.loc[res['Adjusted P-value'] <= 0.05]

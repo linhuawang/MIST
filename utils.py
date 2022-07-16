@@ -173,8 +173,16 @@ def spot_PCA_sims(count_matrix, method="pearson"):
     pca_results = pca.fit_transform(count_mat_norm)
     pca_df = pd.DataFrame(data=pca_results,
                          index=count_matrix.index)
+    
     ## Calculate Pearson Correlation Coefficient as the weights for spot-spot edges
-    spot_cors = pd.DataFrame(pca_df.transpose()).corr(method=method)
+    # edited: use average of three metrics
+    spot_cors = np.mean([pd.DataFrame(pca_df.transpose()).corr(method='pearson'),
+                         pd.DataFrame(pca_df.transpose()).corr(method='spearman'),
+                         pd.DataFrame(pca_df.transpose()).corr(method='kendall')], axis=0)
+    
+    spot_cors = pd.DataFrame(data=spot_cors, 
+                             index=count_matrix.index, 
+                             columns=count_matrix.index)
     return spot_cors
 
 def spot_euc2_aff(slide_meta):

@@ -133,7 +133,7 @@ class ReST(object):
 		self.adata=adata
 
 	def extract_regions(self, min_sim=0.5, max_sim=0.91,
-					 gap=0.05, min_region=40, sigma=0.5, region_min=3):
+					 gap=0.05, min_region=40, sigma=0.5, region_min=3, radius=2):
 		"""Extract core regions by mathemetical optimization, edge pruning and modularity detection
 		
 		Parameters:
@@ -169,7 +169,7 @@ class ReST(object):
 						  index=adata.obs.new_idx.tolist(), 
 						 columns=adata.obs.new_idx.tolist())
 		t11 = time()
-		count_data = Data(count=count_df, meta=mixture_meta, cormat=cor_df)
+		count_data = Data(count=count_df, meta=mixture_meta, cormat=cor_df, radius=radius)
 		t2 = time()
 		print(f"MIST Data created in {(t2-t11):.2f} seconds.")
 

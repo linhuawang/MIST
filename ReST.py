@@ -124,7 +124,8 @@ class ReST(object):
 		sc.pp.log1p(adata, base=2)
 
 		# Procedure 4: Apply PCA using highly variable genes
-		sc.pp.highly_variable_genes(adata, flavor="seurat", n_top_genes=int(hvg_prop * adata.shape[1]))
+		#sc.pp.highly_variable_genes(adata, flavor="seurat", n_top_genes=int(hvg_prop * adata.shape[1]))
+		sc.pp.highly_variable_genes(adata)
 		sc.pp.pca(adata, n_comps=n_pcs)
 
 		# Procedure 5: Calculate paired similarity matrix
@@ -132,8 +133,8 @@ class ReST(object):
 # 			index=adata.obs_names).T.corr().loc[adata.obs_names, adata.obs_names].values
 		self.adata=adata
 
-	def extract_regions(self, min_sim=0.5, max_sim=0.91,
-					 gap=0.05, min_region=40, sigma=0.5, region_min=3, radius=2):
+	def extract_regions(self, min_sim=0.1, max_sim=0.91,
+					 gap=0.05, min_region=40, sigma=0.6, region_min=3, radius=2):
 		"""Extract core regions by mathemetical optimization, edge pruning and modularity detection
 		
 		Parameters:

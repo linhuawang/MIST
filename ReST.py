@@ -128,8 +128,8 @@ class ReST(object):
 		sc.pp.pca(adata, n_comps=n_pcs)
 
 		# Procedure 5: Calculate paired similarity matrix
-		adata.obsp['raw_weights'] = pd.DataFrame(data=adata.obsm['X_pca'], 
-			index=adata.obs_names).T.corr().loc[adata.obs_names, adata.obs_names].values
+# 		adata.obsp['raw_weights'] = pd.DataFrame(data=adata.obsm['X_pca'], 
+# 			index=adata.obs_names).T.corr().loc[adata.obs_names, adata.obs_names].values
 		self.adata=adata
 
 	def extract_regions(self, min_sim=0.5, max_sim=0.91,
@@ -165,19 +165,19 @@ class ReST(object):
 						  index=adata.obs.new_idx.tolist(), 
 						 columns=adata.var.index.tolist())
 
-		cor_df = pd.DataFrame(data=adata.obsp['raw_weights'], 
-						  index=adata.obs.new_idx.tolist(), 
-						 columns=adata.obs.new_idx.tolist())
+# 		cor_df = pd.DataFrame(data=adata.obsp['raw_weights'], 
+# 						  index=adata.obs.new_idx.tolist(), 
+# 						 columns=adata.obs.new_idx.tolist())
 		t11 = time()
-		count_data = Data(count=count_df, meta=mixture_meta, cormat=cor_df, radius=radius)
+		count_data = Data(count=count_df, meta=mixture_meta, radius=radius)
 		t2 = time()
 		print(f"MIST Data created in {(t2-t11):.2f} seconds.")
 
 		# 2 & 3. Optimize the threshold and detect regions
 		results = select_epsilon(count_data, min_sim=min_sim, 
-												max_sim=max_sim, gap=gap, 
-												min_region=min_region, 
-												sigma=sigma, region_min=region_min)
+					max_sim=max_sim, gap=gap, 
+					min_region=min_region, 
+					sigma=sigma, region_min=region_min)
 		# 4. Result integration
 		self.thr_opt_fig = results['thre_figure']
 		sample_regions = results['region_df']

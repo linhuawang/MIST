@@ -124,8 +124,7 @@ class ReST(object):
 		sc.pp.log1p(adata, base=2)
 
 		# Procedure 4: Apply PCA using highly variable genes
-		#sc.pp.highly_variable_genes(adata, flavor="seurat", n_top_genes=int(hvg_prop * adata.shape[1]))
-		sc.pp.highly_variable_genes(adata)
+		sc.pp.highly_variable_genes(adata, flavor="seurat", n_top_genes=int(hvg_prop * adata.shape[1]))
 		sc.pp.pca(adata, n_comps=n_pcs)
 
 		# Procedure 5: Calculate paired similarity matrix

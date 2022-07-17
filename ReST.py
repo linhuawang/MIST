@@ -71,7 +71,7 @@ class ReST(object):
 		rd2 = ReST(adata=self.adata.copy())
 		return rd2
 
-	def preprocess(self, hvg_prop=0.8,species='Human', n_pcs=30, filter_spot=True):
+	def preprocess(self, hvg_prop=0.9,species='Human', n_pcs=30, filter_spot=True):
 		"""Important function to preprocess the data by normalization and filtering
 		
 		Parameters:

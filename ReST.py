@@ -162,9 +162,9 @@ class ReST(object):
 									 'y':adata.obs.array_row.tolist()}, 
 										index=adata.obs['new_idx'])
 
-		count_df = pd.DataFrame(data=adata.X.toarray(), 
+		count_df = pd.DataFrame(data=adata[:, adata.var.highly_variable].X.toarray(), 
 						  index=adata.obs.new_idx.tolist(), 
-						 columns=adata.var.index.tolist())
+						 columns=adata.var.index[adata.var.highly_variable])
 
 # 		cor_df = pd.DataFrame(data=adata.obsp['raw_weights'], 
 # 						  index=adata.obs.new_idx.tolist(), 

@@ -164,31 +164,30 @@ def spot_PCA_sims(count_matrix, method="pearson"):
     ------
     spot-spot similarity matrix
     """
-    np.random.seed(2021)
+    np.random.seed(2022)
     assert method in ['pearson', 'kendall', 'spearman']
     ## Z-score normalize gene expression
-    count_mat_norm = StandardScaler().fit_transform(count_matrix)
+    #count_mat_norm = StandardScaler().fit_transform(count_matrix)
     ## Reduce the dimensino to top 20
     pca = PCA(n_components=20)
     pca_results = pca.fit_transform(count_mat_norm)
     pca_df = pd.DataFrame(data=pca_results,
                          index=count_matrix.index)
-    
+
     ## Calculate Pearson Correlation Coefficient as the weights for spot-spot edges
     # edited: use average of three metrics
-    spot_cors = np.mean([pd.DataFrame(pca_df.transpose()).corr(method='pearson'),
-                         pd.DataFrame(pca_df.transpose()).corr(method='spearman'),
+    spot_cors = np.mean([pd.DataFrame(pca_df.transpose()).corr(method='spearman'),
                          pd.DataFrame(pca_df.transpose()).corr(method='kendall')], axis=0)
-    
-    spot_cors = pd.DataFrame(data=spot_cors, 
-                             index=count_matrix.index, 
+
+    spot_cors = pd.DataFrame(data=spot_cors,
+                             index=count_matrix.index,
                              columns=count_matrix.index)
     return spot_cors
 
 def spot_euc2_aff(slide_meta):
     """Methods to calculate spot-spot similarity using eucledian distance
     between the coordinates
-    
+
     Parameters:
     ----------
     slide_meta: data frame, coordinates of spots

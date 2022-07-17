@@ -72,6 +72,7 @@ class Data(object):
 		if isinstance(cormat, pd.DataFrame):
 			self.cormat = cormat
 		else:
+			print("Calculating pairwise spot similarities. This step takes minutes ...")
 			self.cormat = utils.spot_PCA_sims(self.count)
 
 		# add other features

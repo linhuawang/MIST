@@ -17,7 +17,8 @@ from scipy.spatial import distance
 from matplotlib import pyplot as plt
 from scipy.stats import percentileofscore as percentile
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, TruncatedSVD
+from scipy.sparse import csr_matrix
 
 __author__ = "Linhua Wang"
 __license__ = "GNU General Public License v3.0"
@@ -152,9 +153,8 @@ def filterGene_sparsity(count_matrix, sparsity_ratio=0.5):
     genes = gene_sparsity[gene_sparsity >=  sparsity_ratio].index
     return count_matrix.loc[:,genes]
 
-def spot_PCA_sims(count_matrix, method="pearson"):
+def spot_PCA_sims(count_matrix, methods=["spearman"], n_pcs=10):
     """Methods to calculate spot-spot similarity at reduced dimenstion
-    
     Parameters:
     ----------
     count_matrix: data frame, normalized gene expression
@@ -165,23 +165,24 @@ def spot_PCA_sims(count_matrix, method="pearson"):
     spot-spot similarity matrix
     """
     np.random.seed(2022)
-    assert method in ['pearson', 'kendall', 'spearman']
     ## Z-score normalize gene expression
-    #count_mat_norm = StandardScaler().fit_transform(count_matrix)
-    ## Reduce the dimensino to top 20
-    pca = PCA(n_components=20)
-    pca_results = pca.fit_transform(count_mat_norm)
+    count_mat_norm = StandardScaler(with_mean=False).fit_transform(csr_matrix(count_matrix.values))
+    ## Reduce the dimension
+    print(f"Extracting top {n_pcs} PCs ...")
+    #pca = PCA(n_components=n_pcs)
+    #pca_results = pca.fit_transform(count_mat_norm)
+    tsvd = TruncatedSVD(n_components=n_pcs, random_state=2022)
+    pca_results = tsvd.fit_transform(count_mat_norm)
     pca_df = pd.DataFrame(data=pca_results,
                          index=count_matrix.index)
-
+    print(f"PCA done. Now getting similarities using {methods}.")
     ## Calculate Pearson Correlation Coefficient as the weights for spot-spot edges
     # edited: use average of three metrics
-    spot_cors = np.mean([pd.DataFrame(pca_df.transpose()).corr(method='spearman'),
-                         pd.DataFrame(pca_df.transpose()).corr(method='kendall')], axis=0)
-
+    spot_cors = np.mean([pd.DataFrame(pca_df.transpose()).corr(method=method) for method in methods], axis=0)
     spot_cors = pd.DataFrame(data=spot_cors,
                              index=count_matrix.index,
                              columns=count_matrix.index)
+    print("Spot similarity matrix extracted.")
     return spot_cors
 
 def spot_euc2_aff(slide_meta):

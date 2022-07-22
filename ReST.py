@@ -71,7 +71,7 @@ class ReST(object):
 		rd2 = ReST(adata=self.adata.copy())
 		return rd2
 
-	def preprocess(self, hvg_prop=0.9,species='Human', n_pcs=30, filter_spot=True):
+	def preprocess(self, hvg_prop=0.9,species='Human', n_pcs=10, filter_spot=True, corr_methods = ['spearman']):
 		"""Important function to preprocess the data by normalization and filtering
 		
 		Parameters:
@@ -128,14 +128,14 @@ class ReST(object):
 		sc.pp.pca(adata, n_comps=n_pcs)
 
 		# Procedure 5: Calculate paired similarity matrix
-# 		adata.obsp['raw_weights'] = pd.DataFrame(data=adata.obsm['X_pca'], 
-# 			index=adata.obs_names).T.corr().loc[adata.obs_names, adata.obs_names].values
+		pca_df = pd.DataFrame(data=adata.obsm['X_pca'], index=adata.obs_names)
+		adata.obsp['raw_weights'] = np.mean([pca_df.T.corr(method=method).values for method in corr_methods],axis=0)
 		self.adata=adata
 
-	def extract_regions(self, min_sim=0.1, max_sim=0.91,
+	def extract_regions(self, min_sim=0.1, max_sim=0.91, n_pcs=10, corr_methods=['pearson'],
 					 gap=0.05, min_region=40, sigma=0.6, region_min=3, radius=2):
 		"""Extract core regions by mathemetical optimization, edge pruning and modularity detection
-		
+
 		Parameters:
 		-----------
 		min_sim: float, range from 0 to 1, determines the starting point to search for the optimal threshold.
@@ -165,11 +165,11 @@ class ReST(object):
 						  index=adata.obs.new_idx.tolist(), 
 						 columns=adata.var.index[adata.var.highly_variable])
 
-# 		cor_df = pd.DataFrame(data=adata.obsp['raw_weights'], 
-# 						  index=adata.obs.new_idx.tolist(), 
-# 						 columns=adata.obs.new_idx.tolist())
+		cor_df = pd.DataFrame(data=adata.obsp['raw_weights'], 
+						  index=adata.obs.new_idx.tolist(), 
+						 columns=adata.obs.new_idx.tolist())
 		t11 = time()
-		count_data = Data(count=count_df, meta=mixture_meta, radius=radius)
+		count_data = Data(count=count_df, meta=mixture_meta, radius=radius, n_pcs=n_pcs, cormat=cor_df)
 		t2 = time()
 		print(f"MIST Data created in {(t2-t11):.2f} seconds.")
 
@@ -354,21 +354,24 @@ class ReST(object):
 							gene_sets=gene_sets,
 							organism=species)
 			except:
-				res = gp.enrichr(gene_list= region_markers, gene_sets=gene_sets)
-			res = res.res2d
-			res = res.sort_values("Odds Ratio")
-			res_sig = res.loc[res['Adjusted P-value'] <= 0.05]
-
-			if not res_sig.empty:
-				assigned_name = f"{res_sig.Term.tolist()[0]} ({region_markers[0]})"
+				try:
+					res = gp.enrichr(gene_list= region_markers, gene_sets=gene_sets)
+				except:
+					res = None
+			if res is not None:
+				res = res.res2d
+				res = res.sort_values("Odds Ratio")
+				res_sig = res.loc[res['Adjusted P-value'] <= 0.05]
+				if not res_sig.empty:
+					assigned_name = f"{res_sig.Term.tolist()[0]} ({region_markers[0]})"
+					region_gsea_dict[region] = res_sig
+				else:
+					assigned_name = ', '.join(region_markers[0: np.min([3, len(region_markers)])])
 			else:
 				assigned_name = ', '.join(region_markers[0: np.min([3, len(region_markers)])])
 
+
 			region_names[region] = assigned_name
-			if not res_sig.empty:
-				region_gsea_dict[region] = res_sig
-			else:
-				region_gsea_dict[region] = res.iloc[:10, :]
 
 		self.auto_region_names = region_names
 		self.region_enrichment_result = region_gsea_dict

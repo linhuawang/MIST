@@ -132,7 +132,9 @@ def obj_scores(ccs, cormat, min_region=5, sigma=1, region_min=3):
     coverage = n_regional / n_total
     # scores = -1 * (term1 - term2 + sigma * term3) + 1
     #print(term1, term2, term3, scores)
-    scores = 0.7*(term2 - term1) - 0.3*np.log2(coverage)
+
+    scores = term2 - term1 - 0.1 * coverage
+
     if (len(ccs) < region_min) or (coverage < sigma):
         return 1
     return scores

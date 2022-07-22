@@ -52,7 +52,8 @@ class Data(object):
 	
 	"""
 	def __init__(self, count=None, meta=None, cormat=None,
-				 countpath="", radius=2, merge=0, norm="none", epsilon=0.7):
+				 countpath="", radius=2, merge=0, norm="none", epsilon=0.7,
+				corr_methods=['spearman'], n_pcs=10):
 		self.norm = norm
 		## add count and meta data
 		if countpath != "":
@@ -73,7 +74,7 @@ class Data(object):
 			self.cormat = cormat
 		else:
 			print("Calculating pairwise spot similarities. This step takes minutes ...")
-			self.cormat = utils.spot_PCA_sims(self.count)
+			self.cormat = utils.spot_PCA_sims(self.count, methods=corr_methods, n_pcs=n_pcs)
 
 		# add other features
 		self.radius = radius

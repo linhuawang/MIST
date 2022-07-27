@@ -157,7 +157,8 @@ def filterGene_sparsity(count_matrix, sparsity_ratio=0.5):
 def weighted_PCA_sims(count_matrix, n_pcs):
     pca = PCA(n_components=n_pcs)
     pca_res = pca.fit_transform(count_matrix)
-    weights = pca.explained_variance_ratio_/np.sum(pca.explained_variance_ratio_)
+    ratio = np.sqrt(pca.explained_variance_ratio_)
+    weights = ratio/np.sum(ratio)
     d = DescrStatsW(pca_res.transpose(), weights=weights)
     weighted_corrs = d.corrcoef
     return weighted_corrs, pca_res

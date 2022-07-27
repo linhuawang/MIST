@@ -128,7 +128,7 @@ class ReST(object):
 		# Procedure 5: Calculate paired similarity matrix
 		if corr_methods == ['weighted']:
 			## this method calculates weighted similaries based on the PC-explained variance
-			corrs, pca_res = weighted_PCA_sims(adata[:, adata.var.highly_variable]].X.toarray(), n_pcs)
+			corrs, pca_res = weighted_PCA_sims(adata[:, adata.var.highly_variable].X.toarray(), n_pcs)
 			adata.obsp['raw_weights'] = corrs
 			adata.obs['X_pca'] = pca_res
 		else:	# should not contain 'weighted' in the method list if len(corr_methods) > 1

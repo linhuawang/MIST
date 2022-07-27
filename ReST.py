@@ -71,7 +71,7 @@ class ReST(object):
 		rd2 = ReST(adata=self.adata.copy())
 		return rd2
 
-	def preprocess(self, hvg_prop=0.9,species='Human', n_pcs=10, filter_spot=True, corr_methods = ['spearman']):
+	def preprocess(self, hvg_prop=0.9,species='Human', n_pcs=10, filter_spot=True, corr_methods = ['weighted']):
 		"""Important function to preprocess the data by normalization and filtering
 		
 		Parameters:
@@ -124,14 +124,20 @@ class ReST(object):
 
 		# Procedure 4: Apply PCA using highly variable genes
 		sc.pp.highly_variable_genes(adata, flavor="seurat", n_top_genes=int(hvg_prop * adata.shape[1]))
-		sc.pp.pca(adata, n_comps=n_pcs)
-
+		
 		# Procedure 5: Calculate paired similarity matrix
-		pca_df = pd.DataFrame(data=adata.obsm['X_pca'], index=adata.obs_names)
-		adata.obsp['raw_weights'] = np.mean([pca_df.T.corr(method=method).values for method in corr_methods],axis=0)
+		if corr_methods == ['weighted']:
+			## this method calculates weighted similaries based on the PC-explained variance
+			corrs, pca_res = weighted_PCA_sims(adata[:, adata.var.highly_variable]].X.toarray(), n_pcs)
+			adata.obsp['raw_weights'] = corrs
+			adata.obs['X_pca'] = pca_res
+		else:	# should not contain 'weighted' in the method list if len(corr_methods) > 1
+			sc.pp.pca(adata, n_comps=n_pcs)			
+			pca_df = pd.DataFrame(data=adata.obsm['X_pca'], index=adata.obs_names)
+			adata.obsp['raw_weights'] = np.mean([pca_df.T.corr(method=method).values for method in corr_methods],axis=0)
 		self.adata=adata
 
-	def extract_regions(self, min_sim=0.1, max_sim=0.91, n_pcs=10, corr_methods=['pearson'],
+	def extract_regions(self, min_sim=0.8, max_sim=0.96, n_pcs=10, corr_methods=['pearson'],
 					 gap=0.05, min_region=40, sigma=0.6, region_min=3, radius=2):
 		"""Extract core regions by mathemetical optimization, edge pruning and modularity detection
 
@@ -181,6 +187,7 @@ class ReST(object):
 		self.thr_opt_fig = results['thre_figure']
 		sample_regions = results['region_df']
 		count_data.epsilon = results['threshold']
+		self.epsilon = results['threshold']
 		self.nodes = count_data.nodes
 		region_dict = dict(zip(sample_regions.index.tolist(),
 							 sample_regions.region_ind))

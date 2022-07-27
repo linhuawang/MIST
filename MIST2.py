@@ -15,7 +15,7 @@ __license__ = "GNU General Public License v3.0"
 __maintainer__ = "Linhua Wang"
 __email__ = "linhuaw@bcm.edu"
 
-def MIST(rdata, nExperts=10, ncores=1, verbose=1):
+def MIST(rdata, nExperts=10, ncores=1, verbose=1, layer='CPM'):
 	"""
 	The function that takes ST data object and return the imputed gene expression and \
 	region membership for all ST spots.
@@ -33,8 +33,13 @@ def MIST(rdata, nExperts=10, ncores=1, verbose=1):
 	core_regions = list(core_regions)
 
 	## Construct a data frame for denoising
-	data = pd.DataFrame(data=rdata.adata.layers['CPM'].toarray().astype(int),
-		index = rdata.adata.obs.new_idx, columns = rdata.adata.var_names)
+	if layer!='CPM':
+		print(f"Imputing layer {layer}")
+		values = np.round(rdata.adata.X.toarray(), 2)
+	else:
+		print(f"Imputing layer {layer}")
+		values = np.round(rdata.adata.layers['CPM'].toarray(), 2)
+	data = pd.DataFrame(data=values, index = rdata.adata.obs.new_idx, columns = rdata.adata.var_names)
 
 	spots = data.index.tolist()
 	# Indices of non-zero gene expression values in the matrix
@@ -70,6 +75,7 @@ def MIST(rdata, nExperts=10, ncores=1, verbose=1):
 		for i2 in range(nExperts):
 			iso_inds, other_inds = isolated_ksplit[i2][1], other_ksplit[i2][1]
 			ri_spots  = region_spots + list(np.array(isolated_spots)[iso_inds]) + list(np.array(other_spots)[other_inds])
+#			ri_spots  = region_spots + list(np.array(isolated_spots)[iso_inds])
 			ensemble_inputs.append((data.loc[ri_spots,:], f'{i1} / {i2}'))
 
 		with get_context("spawn").Pool(ncores) as pool:

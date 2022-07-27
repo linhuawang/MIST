@@ -33,11 +33,11 @@ class Imputer(object):
 		self.name = name
 		self.data = data
 
-	def fit_transform(self, n_neighbors=4, select=0, ncores=10, nExperts=10, nodes=None):
+	def fit_transform(self, n_neighbors=4, select=0, ncores=10, nExperts=10, nodes=None, layer='CPM'):
 		"""Method to call imputation methods"""
 		if self.name == 'MIST':
 			imputed = MIST2.MIST(self.data, nExperts=nExperts, 
-				ncores=ncores, verbose=1)
+				ncores=ncores, verbose=1, layer=layer)
 			return imputed
 		else:
 			data = pd.DataFrame(data=self.data.adata.layers['CPM'].toarray(),

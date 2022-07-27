@@ -110,11 +110,10 @@ class ReST(object):
 		print(f'Filtering spots with less than {min_count} UMIs.')
 		if filter_spot:
 			sc.pp.filter_cells(adata, min_counts=min_count)
-
-		adata = adata[adata.obs["pct_counts_mt"] < 25]
-
+			adata = adata[adata.obs["pct_counts_mt"] < 25]
 		# Procedure 2: Filter genes
 		sc.pp.filter_genes(adata, min_cells=10)
+		adata = adata[:, np.sum(adata.X.toarray() > 1, axis=0) > 2]
 		print(f'After QC: {adata.shape[0]} observations and {adata.shape[1]} genes.')
 
 		# Procedure 3: Data normalization 
@@ -494,7 +493,7 @@ class ReST(object):
 		return f
 
 
-	def impute(self, method='MIST', n_neighbors=4, ncores=1, nExperts=5):
+	def impute(self, method='MIST', n_neighbors=4, ncores=1, nExperts=5, layer='CPM'):
 		"""Important function to impute the data. For more information, please investigate
 		imputers.py and MIST2.py.
 
@@ -513,7 +512,7 @@ class ReST(object):
 		imputer = Imputer(method, rdata)
 		nodes = self.nodes
 		imputed_data = imputer.fit_transform(n_neighbors=n_neighbors, 
-			ncores=ncores, nExperts=nExperts, nodes=nodes)
+			ncores=ncores, nExperts=nExperts, nodes=nodes, layer=layer)
 		return imputed_data
 
 	def plot_region_boundaries(self, region_colors = None, by='UMI'):

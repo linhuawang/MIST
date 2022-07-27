@@ -19,6 +19,7 @@ from scipy.stats import percentileofscore as percentile
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA, TruncatedSVD
 from scipy.sparse import csr_matrix
+from statsmodels.stats.weightstats import DescrStatsW 
 
 __author__ = "Linhua Wang"
 __license__ = "GNU General Public License v3.0"
@@ -152,6 +153,14 @@ def filterGene_sparsity(count_matrix, sparsity_ratio=0.5):
     gene_sparsity = (count_matrix!=0).sum().divide(count_matrix.shape[0])
     genes = gene_sparsity[gene_sparsity >=  sparsity_ratio].index
     return count_matrix.loc[:,genes]
+
+def weighted_PCA_sims(count_matrix, n_pcs):
+    pca = PCA(n_components=n_pcs)
+    pca_res = pca.fit_transform(count_matrix)
+    weights = pca.explained_variance_ratio_/np.sum(pca.explained_variance_ratio_)
+    d = DescrStatsW(pca_res.transpose(), weights=weights)
+    weighted_corrs = d.corrcoef
+    return weighted_corrs, pca_res
 
 def spot_PCA_sims(count_matrix, methods=["spearman"], n_pcs=10):
     """Methods to calculate spot-spot similarity at reduced dimenstion

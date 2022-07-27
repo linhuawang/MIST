@@ -18,6 +18,7 @@ from descartes import PolygonPatch
 import joblib
 import plotly.express as px
 import gseapy as gp
+from utils import weighted_PCA_sims
 
 class ReST(object):
 	""" An Region-based Spatial Transcriptomics (ReST) object dedicated to perform 

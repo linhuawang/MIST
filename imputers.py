@@ -49,7 +49,11 @@ class Imputer(object):
 			elif self.name == "mcImpute":
 				return mcImpute(data)
 			elif self.name == "spKNN":
-				return spKNN(data, nodes) 
+				corrs = self.data.adata.obsp['raw_weights'].copy()
+				cor_df = pd.DataFrame(data=corrs, 
+										index=self.data.adata.obs.index.copy(),
+										columns=self.data.adata.obs.index.copy())
+				return spKNN(data, nodes, cor_df) 
 
 
 def MAGIC(data):
@@ -111,7 +115,7 @@ def mcImpute(data):
 	"""
 	return MIST2.rankMinImpute([data, 'mcImpute'])
 
-def spKNN(data, nodes):
+def spKNN(data, nodes, cor_df):
 	""""A base-line method that estimate missing values by averaging
 	 no more than 4 spatially adjacent spots.
 
@@ -130,6 +134,7 @@ def spKNN(data, nodes):
 	for node in nodes:
 		spot = node.name
 		nbs = [nb.name for nb in node.neighbors]
+		nbs = [nb for nb in nbs if cor_df.loc[spot, nb] > 0]
 		nb_df.loc[spot, nbs] = 1
 	## start impute
 	count_knn = data.copy()

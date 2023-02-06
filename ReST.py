@@ -501,9 +501,9 @@ class ReST(object):
 		return f
 
 
-	def impute(self, method='MIST', n_neighbors=4, ncores=1, nExperts=5, layer='CPM'):
+	def impute(self, method='spKNN', n_neighbors=4, ncores=1, nExperts=5, layer='CPM'):
 		"""Important function to impute the data. For more information, please investigate
-		imputers.py and MIST2.py.
+		imputers.py and MIST2.py. Due to time constraints, default imputation apporach is spKNN.
 
 		Parameters:
 		-----------

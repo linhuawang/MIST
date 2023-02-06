@@ -72,7 +72,7 @@ class ReST(object):
 		rd2 = ReST(adata=self.adata.copy())
 		return rd2
 
-	def preprocess(self, hvg_prop=0.9,species='Human', n_pcs=10, filter_spot=True, corr_methods = ['weighted']):
+	def preprocess(self, hvg_prop=0.9,species='Human', n_pcs=10, filter_spot=True, corr_methods = ['pearson']):
 		"""Important function to preprocess the data by normalization and filtering
 		
 		Parameters:
@@ -138,8 +138,8 @@ class ReST(object):
 			adata.obsp['raw_weights'] = np.mean([pca_df.T.corr(method=method).values for method in corr_methods],axis=0)
 		self.adata=adata
 
-	def extract_regions(self, min_sim=0.8, max_sim=0.96, n_pcs=10, corr_methods=['pearson'],
-					 gap=0.05, min_region=40, sigma=0.6, region_min=3, radius=2):
+	def extract_regions(self, min_sim=0.8, max_sim=0.96, n_pcs=10, 
+					 gap=0.05, min_size=40, sigma=0.5, region_min=3, radius=2):
 		"""Extract core regions by mathemetical optimization, edge pruning and modularity detection
 
 		Parameters:
@@ -182,7 +182,7 @@ class ReST(object):
 		# 2 & 3. Optimize the threshold and detect regions
 		results = select_epsilon(count_data, min_sim=min_sim, 
 					max_sim=max_sim, gap=gap, 
-					min_region=min_region, 
+					min_region=min_size, 
 					sigma=sigma, region_min=region_min)
 		# 4. Result integration
 		self.thr_opt_fig = results['thre_figure']
@@ -225,7 +225,7 @@ class ReST(object):
 							'tan', 'yellowgreen', 'dodgerblue', 'magenta', 'deepskyblue']
 			if len(regions) > 20:
 				colors = ['black'] * len(regions)
-				print("Too many regions detected, please increase threshold for parameter min_region.")
+				print("Too many regions detected, please increase threshold for parameter min_size.")
 				sys.exit(0)
 
 			colors = colors[:len(regions)]

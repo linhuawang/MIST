@@ -33,7 +33,8 @@ class Imputer(object):
 		self.name = name
 		self.data = data
 
-	def fit_transform(self, n_neighbors=4, select=0, ncores=10, nExperts=10, nodes=None, layer='CPM'):
+	def fit_transform(self, n_neighbors=4, select=0, 
+		   ncores=10, nExperts=10, thre=0, layer='CPM'):
 		"""Method to call imputation methods"""
 		if self.name == 'MIST':
 			imputed = MIST2.MIST(self.data, nExperts=nExperts, 
@@ -50,10 +51,14 @@ class Imputer(object):
 				return mcImpute(data)
 			elif self.name == "spKNN":
 				corrs = self.data.adata.obsp['raw_weights'].copy()
-				cor_df = pd.DataFrame(data=corrs, 
-										index=self.data.adata.obs.index.copy(),
-										columns=self.data.adata.obs.index.copy())
-				return spKNN(data, nodes, cor_df) 
+				coord_df = self.data.adata.obs.copy()
+				coord_df = coord_df[['array_col', 'array_row']]
+				coord_df.columns= ["x", "y"]
+
+				cor_df = pd.DataFrame(data=corrs,
+										index=self.data.adata.obs_names.copy(),
+										columns=self.data.adata.obs_names.copy())
+				return spKNN(data, coord_df, cor_df, thre) 
 
 
 def MAGIC(data):
@@ -115,7 +120,7 @@ def mcImpute(data):
 	"""
 	return MIST2.rankMinImpute([data, 'mcImpute'])
 
-def spKNN(data, nodes, cor_df):
+def spKNN(data, coord_df, cor_df, thre=0):
 	""""A base-line method that estimate missing values by averaging
 	 no more than 4 spatially adjacent spots.
 
@@ -129,13 +134,17 @@ def spKNN(data, nodes, cor_df):
 	Imputed gene expression as data frame.
 	"""
 	## construct graph
+	nodes = neighbors.construct_graph(coord_df)
+	print("Graph constructed.")
 	nb_df = pd.DataFrame(index=data.index, columns=data.index,
 				data=np.zeros((data.shape[0], data.shape[0])))
+
 	for node in nodes:
 		spot = node.name
 		nbs = [nb.name for nb in node.neighbors]
-		nbs = [nb for nb in nbs if cor_df.loc[spot, nb] > 0]
+		nbs = [nb for nb in nbs if cor_df.loc[spot, nb] > thre]
 		nb_df.loc[spot, nbs] = 1
+	print("Neighbors extracted.")
 	## start impute
 	count_knn = data.copy()
 	for spot in data.index:

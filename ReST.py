@@ -501,7 +501,7 @@ class ReST(object):
 		return f
 
 
-	def impute(self, method='spKNN', n_neighbors=4, ncores=1, nExperts=5, layer='CPM'):
+	def impute(self, method='spKNN', n_neighbors=4, ncores=1, nExperts=5, layer='CPM', thre=0):
 		"""Important function to impute the data. For more information, please investigate
 		imputers.py and MIST2.py. Due to time constraints, default imputation apporach is spKNN.
 
@@ -511,6 +511,7 @@ class ReST(object):
 		n_neighbors: int, parameter for spKNN
 		ncores: int, for parallel computing
 		nExperts: int, for MIST
+		thre: correlation threshold for determining neighors
 
 		Return:
 		-------
@@ -520,7 +521,7 @@ class ReST(object):
 		imputer = Imputer(method, rdata)
 		nodes = self.nodes
 		imputed_data = imputer.fit_transform(n_neighbors=n_neighbors, 
-			ncores=ncores, nExperts=nExperts, nodes=nodes, layer=layer)
+			ncores=ncores, nExperts=nExperts, layer=layer, thre=thre)
 		return imputed_data
 
 	def plot_region_boundaries(self, region_colors = None, by='UMI'):

@@ -1,11 +1,9 @@
 # Missing value Imputation for Spatially resolved Transcriptomics (MIST)
 
-To cite MIST:
+## Reference
 
-Wang, L., Maletic-Savatic, M. & Liu, Z. Region-specific denoising identifies spatial co-expression patterns and intra-tissue heterogeneity in spatially resolved transcriptomics data. Nat Commun 13, 6912 (2022). https://doi.org/10.1038/s41467-022-34567-0
+To cite MIST: Wang, L., Maletic-Savatic, M. & Liu, Z. Region-specific denoising identifies spatial co-expression patterns and intra-tissue heterogeneity in spatially resolved transcriptomics data. Nat Commun 13, 6912 (2022). https://doi.org/10.1038/s41467-022-34567-0
 
-We have moved our MIST package inside a more general object - ReST, which stands for Region-based
-algorithms for Spatial Transcriptomics analysis. Please expect more contents to be added to ReST in the future.
 
 ## Install
 

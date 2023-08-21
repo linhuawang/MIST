@@ -72,7 +72,7 @@ class ReST(object):
 		rd2 = ReST(adata=self.adata.copy())
 		return rd2
 
-	def preprocess(self, hvg_prop=0.9,species='Human', n_pcs=10, filter_spot=True, corr_methods = ['pearson']):
+	def preprocess(self, hvg_prop=0.9,species='Human', n_pcs=10, min_read_count=0, min_cell_count=0, corr_methods = ['spearman']):
 		"""Important function to preprocess the data by normalization and filtering
 		
 		Parameters:
@@ -107,14 +107,20 @@ class ReST(object):
 
 		sc.pp.calculate_qc_metrics(adata, qc_vars=["mt"], inplace=True)
 		#counts = adata.obs.total_counts.to_numpy()
-		min_count = 1500
-		print(f'Filtering spots with less than {min_count} UMIs.')
-		if filter_spot:
-			sc.pp.filter_cells(adata, min_counts=min_count)
-			adata = adata[adata.obs["pct_counts_mt"] < 25]
+		
+		print(f'Filtering spots with less than {min_read_count} UMIs.')
+		sc.pp.filter_cells(adata, min_counts=min_read_count)
+		adata = adata[adata.obs["pct_counts_mt"] < 25]
 		# Procedure 2: Filter genes
-		sc.pp.filter_genes(adata, min_cells=10)
-		adata = adata[:, np.sum(adata.X.toarray() > 1, axis=0) > 2]
+		sc.pp.filter_genes(adata, min_cells=min_cell_count)
+		print(f'Filtering by genes resulted in {adata.shape[1]} genes.' )
+		if adata.shape[1] > 10000:
+			if isinstance(adata.X, csr_matrix):
+				X = adata.X.toarray()
+			else:
+				X = adata.X.copy()
+			adata = adata[:, np.sum(X > 1, axis=0) > 1]
+			del X
 		print(f'After QC: {adata.shape[0]} observations and {adata.shape[1]} genes.')
 
 		# Procedure 3: Data normalization 
@@ -124,7 +130,10 @@ class ReST(object):
 		sc.pp.log1p(adata, base=2)
 
 		# Procedure 4: Apply PCA using highly variable genes
-		sc.pp.highly_variable_genes(adata, flavor="seurat", n_top_genes=int(hvg_prop * adata.shape[1]))
+		if hvg_prop is not None:
+			sc.pp.highly_variable_genes(adata, flavor="seurat", n_top_genes=int(hvg_prop * adata.shape[1]))
+		else:
+			sc.pp.highly_variable_genes(adata)
 		
 		# Procedure 5: Calculate paired similarity matrix
 		if corr_methods == ['weighted']:
@@ -133,6 +142,7 @@ class ReST(object):
 			adata.obsp['raw_weights'] = corrs
 			adata.obsm['X_pca'] = pca_res
 		else:	# should not contain 'weighted' in the method list if len(corr_methods) > 1
+			sc.pp.scale(adata)
 			sc.pp.pca(adata, n_comps=n_pcs)			
 			pca_df = pd.DataFrame(data=adata.obsm['X_pca'], index=adata.obs_names)
 			adata.obsp['raw_weights'] = np.mean([pca_df.T.corr(method=method).values for method in corr_methods],axis=0)
@@ -708,7 +718,7 @@ class ReST(object):
 			adata = self.annot_adata.copy()
 			col = 'manual_name'
 
-		adata_ref = adata[adata.obs.region_ind != 'isolated', :]
+		adata_ref = adata[adata.obs[col] != 'isolated', :]
 		ref_meta = adata_ref.obs[[col]]
 		ref_meta.columns = ['bio_celltype']
 
